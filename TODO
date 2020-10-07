@@ -1,0 +1,8 @@
+* Write a blob
+* Verify blob's MAC
+* Accept a blob over TCP
+* Forward blobs to other servers
+* Only forward once
+* Send asynchronously
+* Send with specified durability
+* Use TOR
