@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+# Copy me to .git/hooks/pre-commit
+
+set -euo pipefail
+
+tmpdir=
+cleanup_tmpdir() {
+  if [[ "$tmpdir" && -e "$tmpdir" ]];then
+    rm -rf "$tmpdir"
+  fi
+}
+trap cleanup_tmpdir EXIT
+
+# Check out the git index (what's about to be committed) in a temporary
+# directory & run the supplied command there.
+in_git_index_in_tmpdir() {
+  tmpdir=$(mktemp -d)
+  [[ "$tmpdir" && -d "$tmpdir" ]]
+  start_index=$(sha256sum "$GIT_INDEX_FILE")
+  git checkout-index --prefix="$tmpdir/" -a
+  pushd "$tmpdir"
+  "$@"
+  popd
+  end_index=$(sha256sum "$GIT_INDEX_FILE")
+  if [[ "$start_index" != "$end_index" ]];then
+    echo "Index changed while pre-commit tests were running.  Aborting!"
+    exit 1
+  fi
+}
+
+verify() {
+  nix --print-build-logs build --no-link
+}
+
+in_git_index_in_tmpdir verify
