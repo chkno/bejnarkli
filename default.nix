@@ -1,8 +1,9 @@
 { pkgs ? import <nixpkgs> { } }:
-pkgs.callPackage ({ lib, mkDerivation, stdenv, }:
+pkgs.haskellPackages.callPackage ({ lib, mkDerivation, QuickCheck, stdenv, }:
   mkDerivation {
     pname = "bejnarkli";
     version = "0.0.1.0";
     src = lib.cleanSource ./.;
+    testHaskellDepends = [ QuickCheck ];
     license = lib.licenses.mit;
-  }) { inherit (pkgs.haskellPackages) mkDerivation; }
+  }) { }
