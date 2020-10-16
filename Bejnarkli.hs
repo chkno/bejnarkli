@@ -12,12 +12,11 @@ import System.Directory
 import System.FilePath
 
 type Blob = String
-type BlobName = String
 
-data ExtantBlobName = ExtantBlob BlobName deriving (Eq, Ord)
+data ExtantBlobName = ExtantBlob String deriving (Eq, Ord)
 
 class BlobStore a where
-  writeBlob    :: a -> BlobName -> Blob -> IO ExtantBlobName
+  writeBlob    :: a -> String -> Blob -> IO ExtantBlobName
   listBlobs    :: a -> IO [ExtantBlobName]
   getBlob      :: a -> ExtantBlobName -> IO Blob
 
