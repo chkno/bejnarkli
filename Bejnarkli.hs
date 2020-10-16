@@ -6,12 +6,13 @@ module Bejnarkli
   , writeBlob
   ) where
 
+import qualified Data.ByteString.Lazy as BL
 import Data.IORef
 import qualified Data.Map.Strict as Map
 import System.Directory
 import System.FilePath
 
-type Blob = String
+type Blob = BL.ByteString
 
 data ExtantBlobName = ExtantBlob String deriving (Eq, Ord)
 
@@ -39,9 +40,9 @@ data BlobDirStore = BlobDir FilePath
 newBlobDir :: FilePath -> IO BlobDirStore
 newBlobDir path = seq (createDirectoryIfMissing True path) (pure $ BlobDir path)
 instance BlobStore BlobDirStore where
-  writeBlob (BlobDir d) name blob         = pure $ seq (writeFile (d </> name) blob) (ExtantBlob name)
+  writeBlob (BlobDir d) name blob         = pure $ seq (BL.writeFile (d </> name) blob) (ExtantBlob name)
   listBlobs (BlobDir d)                   = fmap ExtantBlob <$> listDirectory d
-  getBlob   (BlobDir d) (ExtantBlob name) = readFile (d </> name)
+  getBlob   (BlobDir d) (ExtantBlob name) = BL.readFile (d </> name)
 
 
 someFunc :: IO ()

@@ -23,6 +23,7 @@ library
   -- other-extensions:
   build-depends:
     base >=4.12 && <4.13,
+    bytestring,
     containers,
     directory,
     filepath
@@ -36,6 +37,7 @@ executable bejnarkli
   -- other-extensions:
   build-depends:
     base >=4.12 && <4.13,
+    bytestring,
     bejnarkli,
     containers,
     directory,
@@ -51,8 +53,10 @@ test-suite bejnarkli-test
   main-is:             BejnarkliTest.hs
   build-depends:
     base >=4.12 && <4.13,
+    bytestring,
     containers,
     directory,
     filepath,
-    QuickCheck
+    QuickCheck,
+    quickcheck-instances
   --extensions: FlexibleInstances, TypeSynonymInstances
