@@ -40,9 +40,15 @@ data BlobDirStore = BlobDir FilePath
 newBlobDir :: FilePath -> IO BlobDirStore
 newBlobDir path = seq (createDirectoryIfMissing True path) (pure $ BlobDir path)
 instance BlobStore BlobDirStore where
-  writeBlob (BlobDir d) name blob         = pure $ seq (BL.writeFile (d </> (toString name)) blob) (ExtantBlob name)
-  listBlobs (BlobDir d)                   = fmap ExtantBlob <$> map fromString <$> listDirectory d
-  getBlob   (BlobDir d) (ExtantBlob name) = BL.readFile (d </> (toString name))
+  writeBlob bd name blob = pure $ seq (BL.writeFile (blobFileName bd name) blob) (ExtantBlob name)
+  listBlobs (BlobDir d)          = fmap ExtantBlob <$> map unBlobFileName <$> listDirectory d
+  getBlob   bd (ExtantBlob name) = BL.readFile (blobFileName bd name)
+
+blobFileName :: BlobDirStore -> BS.ByteString -> FilePath
+blobFileName (BlobDir d) blobname = d </> (toString blobname)
+
+unBlobFileName :: FilePath -> BS.ByteString
+unBlobFileName = fromString
 
 
 someFunc :: IO ()
