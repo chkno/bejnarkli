@@ -9,6 +9,7 @@ module Bejnarkli
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 (fromString, toString)
+import Data.Maybe (mapMaybe)
 import Data.IORef
 import qualified Data.Map.Strict as Map
 import System.Directory
@@ -41,14 +42,14 @@ newBlobDir :: FilePath -> IO BlobDirStore
 newBlobDir path = seq (createDirectoryIfMissing True path) (pure $ BlobDir path)
 instance BlobStore BlobDirStore where
   writeBlob bd name blob = pure $ seq (BL.writeFile (blobFileName bd name) blob) (ExtantBlob name)
-  listBlobs (BlobDir d)          = fmap ExtantBlob <$> map unBlobFileName <$> listDirectory d
+  listBlobs (BlobDir d)          = fmap ExtantBlob <$> mapMaybe unBlobFileName <$> listDirectory d
   getBlob   bd (ExtantBlob name) = BL.readFile (blobFileName bd name)
 
 blobFileName :: BlobDirStore -> BS.ByteString -> FilePath
 blobFileName (BlobDir d) blobname = d </> (toString blobname)
 
-unBlobFileName :: FilePath -> BS.ByteString
-unBlobFileName = fromString
+unBlobFileName :: FilePath -> Maybe BS.ByteString
+unBlobFileName = Just <$> fromString
 
 
 someFunc :: IO ()
