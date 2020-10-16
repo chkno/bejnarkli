@@ -12,17 +12,15 @@ import qualified Data.Map.Strict as Map
 import System.Directory
 import System.FilePath
 
-type Blob = BL.ByteString
-
 data ExtantBlobName = ExtantBlob String deriving (Eq, Ord)
 
 class BlobStore a where
-  writeBlob    :: a -> String -> Blob -> IO ExtantBlobName
+  writeBlob    :: a -> String -> BL.ByteString -> IO ExtantBlobName
   listBlobs    :: a -> IO [ExtantBlobName]
-  getBlob      :: a -> ExtantBlobName -> IO Blob
+  getBlob      :: a -> ExtantBlobName -> IO BL.ByteString
 
 
-data BlobMapStore = BlobMap (IORef (Map.Map ExtantBlobName Blob))
+data BlobMapStore = BlobMap (IORef (Map.Map ExtantBlobName BL.ByteString))
 newBlobMap :: IO BlobMapStore
 newBlobMap = BlobMap <$> newIORef Map.empty
 instance BlobStore BlobMapStore where
