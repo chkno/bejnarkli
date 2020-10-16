@@ -10,6 +10,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 (fromString, toString)
 import Data.Maybe (mapMaybe)
+import qualified Data.ByteString.Base64 as Base64
 import Data.IORef
 import qualified Data.Map.Strict as Map
 import System.Directory
@@ -46,10 +47,12 @@ instance BlobStore BlobDirStore where
   getBlob   bd (ExtantBlob name) = BL.readFile (blobFileName bd name)
 
 blobFileName :: BlobDirStore -> BS.ByteString -> FilePath
-blobFileName (BlobDir d) blobname = d </> (toString blobname)
+blobFileName (BlobDir d) blobname = d </> (toString (Base64.encode blobname))
 
 unBlobFileName :: FilePath -> Maybe BS.ByteString
-unBlobFileName = Just <$> fromString
+unBlobFileName relpath = case Base64.decode (fromString relpath) of
+  Left _ -> Nothing
+  Right enc -> Just enc
 
 
 someFunc :: IO ()

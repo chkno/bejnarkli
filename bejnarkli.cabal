@@ -23,6 +23,7 @@ library
   -- other-extensions:
   build-depends:
     base >=4.12 && <4.13,
+    base64-bytestring,
     bytestring,
     containers,
     directory,
@@ -38,6 +39,7 @@ executable bejnarkli
   -- other-extensions:
   build-depends:
     base >=4.12 && <4.13,
+    base64-bytestring,
     bytestring,
     bejnarkli,
     containers,
@@ -55,6 +57,7 @@ test-suite bejnarkli-test
   main-is:             BejnarkliTest.hs
   build-depends:
     base >=4.12 && <4.13,
+    base64-bytestring,
     bytestring,
     containers,
     directory,
