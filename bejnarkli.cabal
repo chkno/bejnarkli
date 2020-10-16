@@ -26,7 +26,8 @@ library
     bytestring,
     containers,
     directory,
-    filepath
+    filepath,
+    utf8-string
   -- hs-source-dirs:
   default-language:    Haskell2010
   extensions: FlexibleInstances, TypeSynonymInstances
@@ -41,7 +42,8 @@ executable bejnarkli
     bejnarkli,
     containers,
     directory,
-    filepath
+    filepath,
+    utf8-string
   -- hs-source-dirs:
   default-language:    Haskell2010
   --extensions: FlexibleInstances, TypeSynonymInstances
@@ -58,5 +60,6 @@ test-suite bejnarkli-test
     directory,
     filepath,
     QuickCheck,
-    quickcheck-instances
+    quickcheck-instances,
+    utf8-string
   --extensions: FlexibleInstances, TypeSynonymInstances

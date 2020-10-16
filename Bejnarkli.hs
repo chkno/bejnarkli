@@ -6,16 +6,18 @@ module Bejnarkli
   , writeBlob
   ) where
 
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
+import Data.ByteString.UTF8 (fromString, toString)
 import Data.IORef
 import qualified Data.Map.Strict as Map
 import System.Directory
 import System.FilePath
 
-data ExtantBlobName = ExtantBlob String deriving (Eq, Ord)
+data ExtantBlobName = ExtantBlob BS.ByteString deriving (Eq, Ord)
 
 class BlobStore a where
-  writeBlob    :: a -> String -> BL.ByteString -> IO ExtantBlobName
+  writeBlob    :: a -> BS.ByteString -> BL.ByteString -> IO ExtantBlobName
   listBlobs    :: a -> IO [ExtantBlobName]
   getBlob      :: a -> ExtantBlobName -> IO BL.ByteString
 
@@ -38,9 +40,9 @@ data BlobDirStore = BlobDir FilePath
 newBlobDir :: FilePath -> IO BlobDirStore
 newBlobDir path = seq (createDirectoryIfMissing True path) (pure $ BlobDir path)
 instance BlobStore BlobDirStore where
-  writeBlob (BlobDir d) name blob         = pure $ seq (BL.writeFile (d </> name) blob) (ExtantBlob name)
-  listBlobs (BlobDir d)                   = fmap ExtantBlob <$> listDirectory d
-  getBlob   (BlobDir d) (ExtantBlob name) = BL.readFile (d </> name)
+  writeBlob (BlobDir d) name blob         = pure $ seq (BL.writeFile (d </> (toString name)) blob) (ExtantBlob name)
+  listBlobs (BlobDir d)                   = fmap ExtantBlob <$> map fromString <$> listDirectory d
+  getBlob   (BlobDir d) (ExtantBlob name) = BL.readFile (d </> (toString name))
 
 
 someFunc :: IO ()
