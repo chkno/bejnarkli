@@ -8,6 +8,7 @@ module Bejnarkli
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
+import Control.Error.Util (hush)
 import Data.ByteString.UTF8 (fromString, toString)
 import Data.Maybe (mapMaybe)
 import qualified Data.ByteString.Base64 as Base64
@@ -50,9 +51,7 @@ blobFileName :: BlobDirStore -> BS.ByteString -> FilePath
 blobFileName (BlobDir d) blobname = d </> (toString (Base64.encode blobname))
 
 unBlobFileName :: FilePath -> Maybe BS.ByteString
-unBlobFileName relpath = case Base64.decode (fromString relpath) of
-  Left _ -> Nothing
-  Right enc -> Just enc
+unBlobFileName relpath = hush $ Base64.decode $ fromString relpath
 
 
 someFunc :: IO ()

@@ -27,6 +27,7 @@ library
     bytestring,
     containers,
     directory,
+    errors,
     filepath,
     utf8-string
   -- hs-source-dirs:
@@ -44,6 +45,7 @@ executable bejnarkli
     bejnarkli,
     containers,
     directory,
+    errors,
     filepath,
     utf8-string
   -- hs-source-dirs:
@@ -61,6 +63,7 @@ test-suite bejnarkli-test
     bytestring,
     containers,
     directory,
+    errors,
     filepath,
     QuickCheck,
     quickcheck-instances,
