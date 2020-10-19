@@ -17,12 +17,12 @@ trap cleanup_tmpdir EXIT
 in_git_index_in_tmpdir() {
   tmpdir=$(mktemp -d)
   [[ "$tmpdir" && -d "$tmpdir" ]]
-  start_index=$(sha256sum "$GIT_INDEX_FILE")
+  start_index=$(sha256sum "${GIT_INDEX_FILE:-.git/index}")
   git checkout-index --prefix="$tmpdir/" -a
   pushd "$tmpdir"
   "$@"
   popd
-  end_index=$(sha256sum "$GIT_INDEX_FILE")
+  end_index=$(sha256sum "${GIT_INDEX_FILE:-.git/index}")
   if [[ "$start_index" != "$end_index" ]];then
     echo "Index changed while pre-commit tests were running.  Aborting!"
     exit 1
