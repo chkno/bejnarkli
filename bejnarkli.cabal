@@ -67,5 +67,7 @@ test-suite bejnarkli-test
     filepath,
     QuickCheck,
     quickcheck-instances,
+    test-framework,
+    test-framework-quickcheck2,
     utf8-string
   --extensions: FlexibleInstances, TypeSynonymInstances
