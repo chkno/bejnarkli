@@ -1,6 +1,6 @@
 { pkgs ? import <nixpkgs> { } }:
 pkgs.haskellPackages.callPackage ({ base64-bytestring, errors, lib, mkDerivation
-  , QuickCheck, quickcheck-instances, stdenv, test-framework
+  , QuickCheck, quickcheck-instances, stdenv, temporary, test-framework
   , test-framework-quickcheck2, utf8-string, }:
   mkDerivation {
     pname = "bejnarkli";
@@ -11,6 +11,7 @@ pkgs.haskellPackages.callPackage ({ base64-bytestring, errors, lib, mkDerivation
       errors
       QuickCheck
       quickcheck-instances
+      temporary
       test-framework
       test-framework-quickcheck2
       utf8-string

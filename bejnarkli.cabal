@@ -67,6 +67,7 @@ test-suite bejnarkli-test
     filepath,
     QuickCheck,
     quickcheck-instances,
+    temporary,
     test-framework,
     test-framework-quickcheck2,
     utf8-string
