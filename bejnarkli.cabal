@@ -24,6 +24,7 @@ common shared-properties
     directory,
     errors,
     filepath,
+    temporary,
     utf8-string
   default-language:    Haskell2010
 
@@ -44,6 +45,5 @@ test-suite bejnarkli-test
   build-depends:
     QuickCheck,
     quickcheck-instances,
-    temporary,
     test-framework,
     test-framework-quickcheck2

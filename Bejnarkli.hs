@@ -9,14 +9,17 @@ module Bejnarkli
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
+import Control.Exception (bracket)
 import Control.Error.Util (hush)
 import Data.ByteString.UTF8 (fromString, toString)
 import Data.Maybe (mapMaybe)
 import qualified Data.ByteString.Base64.URL as Base64
 import Data.IORef
 import qualified Data.Map.Strict as Map
-import System.Directory
+import System.Directory (createDirectoryIfMissing, listDirectory, renameFile)
 import System.FilePath
+import System.IO (hClose)
+import System.IO.Temp (openBinaryTempFile)
 
 data ExtantBlobName = ExtantBlob BS.ByteString deriving (Eq, Ord)
 
@@ -45,12 +48,18 @@ instance BlobStore BlobMapStore where
 data BlobDirStore = BlobDir FilePath
 newBlobDir :: FilePath -> IO BlobDirStore
 newBlobDir path = do
-  createDirectoryIfMissing True path
+  createDirectoryIfMissing True $ path </> "incoming"
   pure $ BlobDir path
 instance BlobStore BlobDirStore where
-  writeBlob bd name blob = do
-    BL.writeFile (blobFileName bd name) blob
-    pure $ ExtantBlob name
+  writeBlob bd name blob = bracket
+      (openBinaryTempFile (d </> "incoming") "new")
+      (hClose . snd)
+      (\(tmpname, tmpfile) -> do
+        BL.hPut tmpfile blob
+        renameFile tmpname (blobFileName bd name)
+        pure $ ExtantBlob name)
+    where
+    (BlobDir d) = bd
   listBlobs (BlobDir d)          = fmap ExtantBlob <$> mapMaybe unBlobFileName <$> listDirectory d
   getBlob   bd (ExtantBlob name) = BL.readFile (blobFileName bd name)
 

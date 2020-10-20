@@ -2,7 +2,7 @@ module Main where
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
-import System.IO.Temp
+import System.IO.Temp (withSystemTempDirectory)
 import Test.Framework as TF (defaultMain, testGroup, Test)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck (Property, quickCheck, (==>))

@@ -1,4 +1,3 @@
-* Write blobs to non-final path & move into place
 * Verify blob's MAC
 * Blobs are content-addressed (unnamed)
 * Accept a blob over TCP
