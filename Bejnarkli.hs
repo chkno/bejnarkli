@@ -12,7 +12,7 @@ import qualified Data.ByteString.Lazy as BL
 import Control.Error.Util (hush)
 import Data.ByteString.UTF8 (fromString, toString)
 import Data.Maybe (mapMaybe)
-import qualified Data.ByteString.Base64 as Base64
+import qualified Data.ByteString.Base64.URL as Base64
 import Data.IORef
 import qualified Data.Map.Strict as Map
 import System.Directory
