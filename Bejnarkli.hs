@@ -26,7 +26,7 @@ import System.IO.Temp (openBinaryTempFile)
 
 blobNameLength = 3
 
-data ExtantBlobName = ExtantBlob BS.ByteString deriving (Eq, Ord)
+newtype ExtantBlobName = ExtantBlob BS.ByteString deriving (Eq, Ord)
 
 class BlobStore a where
   writeBlob             :: a -> BS.ByteString -> BL.ByteString -> IO ExtantBlobName
@@ -42,7 +42,7 @@ class BlobStore a where
 
 
 
-data BlobMapStore = BlobMap (IORef (Map.Map ExtantBlobName BL.ByteString))
+newtype BlobMapStore = BlobMap (IORef (Map.Map ExtantBlobName BL.ByteString))
 newBlobMap :: IO BlobMapStore
 newBlobMap = BlobMap <$> newIORef Map.empty
 instance BlobStore BlobMapStore where
@@ -58,7 +58,7 @@ instance BlobStore BlobMapStore where
 
 
 
-data BlobDirStore = BlobDir FilePath
+newtype BlobDirStore = BlobDir FilePath
 newBlobDir :: FilePath -> IO BlobDirStore
 newBlobDir path = do
   createDirectoryIfMissing True $ path </> "incoming"
@@ -73,11 +73,11 @@ instance BlobStore BlobDirStore where
         pure $ ExtantBlob name)
     where
     (BlobDir d) = bd
-  listBlobs (BlobDir d)          = fmap ExtantBlob <$> mapMaybe unBlobFileName <$> listDirectory d
+  listBlobs (BlobDir d)          = fmap ExtantBlob . mapMaybe unBlobFileName <$> listDirectory d
   getBlob   bd (ExtantBlob name) = BL.readFile (blobFileName bd name)
 
 blobFileName :: BlobDirStore -> BS.ByteString -> FilePath
-blobFileName (BlobDir d) blobname = d </> (toString (Base64.encode blobname))
+blobFileName (BlobDir d) blobname = d </> toString (Base64.encode blobname)
 
 unBlobFileName :: FilePath -> Maybe BS.ByteString
 unBlobFileName relpath = hush $ Base64.decode $ fromString relpath

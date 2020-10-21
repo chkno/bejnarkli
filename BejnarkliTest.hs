@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Monad ((>=>))
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import System.IO.Temp (withSystemTempDirectory)
@@ -24,7 +25,7 @@ prop_BlobStoreWritePrefixedRead bs stream = BL.length stream > blobNameLength ==
   assert $ ret == BL.drop blobNameLength stream
 
 main :: IO ()
-main = withSystemTempDirectory "bej" $ \d -> (tests d >>= TF.defaultMain)
+main = withSystemTempDirectory "bej" $ tests >=> TF.defaultMain
 
 tests :: FilePath -> IO [Test]
 tests tmpdir = do
