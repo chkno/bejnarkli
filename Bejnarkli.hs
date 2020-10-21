@@ -17,11 +17,11 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64.URL as Base64
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 (fromString, toString)
-import Data.IORef
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (mapMaybe)
 import System.Directory (createDirectoryIfMissing, listDirectory, renameFile)
-import System.FilePath
+import System.FilePath ((</>))
 import System.IO (hClose)
 import System.IO.Temp (openBinaryTempFile)
 
