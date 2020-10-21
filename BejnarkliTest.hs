@@ -17,6 +17,12 @@ prop_BlobStoreWriteRead bs n b = BS.length n > 0 ==> monadicIO $ do
   ret <- run $ getBlob bs ename
   assert $ ret == b
 
+prop_BlobStoreWritePrefixedRead :: BlobStore bs => bs -> BL.ByteString -> Property
+prop_BlobStoreWritePrefixedRead bs stream = BL.length stream > blobNameLength ==> monadicIO $ do
+  ename <- run $ writeNamePrefixedBlob bs stream
+  ret <- run $ getBlob bs ename
+  assert $ ret == BL.drop blobNameLength stream
+
 main :: IO ()
 main = withSystemTempDirectory "bej" $ \d -> (tests d >>= TF.defaultMain)
 
@@ -25,5 +31,7 @@ tests tmpdir = do
   m <- newBlobMap
   d <- newBlobDir tmpdir
   pure [ testProperty "Map Write Read" (prop_BlobStoreWriteRead m)
+       , testProperty "Map Write Prefixed Read" (prop_BlobStoreWritePrefixedRead m)
        , testProperty "Dir Write Read" (prop_BlobStoreWriteRead d)
+       , testProperty "Dir Write Prefixed Read" (prop_BlobStoreWritePrefixedRead d)
        ]

@@ -1,10 +1,12 @@
 module Bejnarkli
-  ( BlobStore
+  ( blobNameLength
+  , BlobStore
   , getBlob
   , newBlobMap
   , newBlobDir
   , someFunc
   , writeBlob
+  , writeNamePrefixedBlob
   ) where
 
 import qualified Data.ByteString as BS
@@ -15,18 +17,29 @@ import Data.ByteString.UTF8 (fromString, toString)
 import Data.Maybe (mapMaybe)
 import qualified Data.ByteString.Base64.URL as Base64
 import Data.IORef
+import Data.Int (Int64)
 import qualified Data.Map.Strict as Map
 import System.Directory (createDirectoryIfMissing, listDirectory, renameFile)
 import System.FilePath
 import System.IO (hClose)
 import System.IO.Temp (openBinaryTempFile)
 
+blobNameLength = 3
+
 data ExtantBlobName = ExtantBlob BS.ByteString deriving (Eq, Ord)
 
 class BlobStore a where
-  writeBlob    :: a -> BS.ByteString -> BL.ByteString -> IO ExtantBlobName
-  listBlobs    :: a -> IO [ExtantBlobName]
-  getBlob      :: a -> ExtantBlobName -> IO BL.ByteString
+  writeBlob             :: a -> BS.ByteString -> BL.ByteString -> IO ExtantBlobName
+  listBlobs             :: a -> IO [ExtantBlobName]
+  getBlob               :: a -> ExtantBlobName -> IO BL.ByteString
+  writeNamePrefixedBlob :: a -> BL.ByteString -> IO ExtantBlobName
+  writeNamePrefixedBlob bs stream = uncurry (writeBlob bs) $ strictPrefixSplitAt blobNameLength stream
+    where
+      -- |Like splitAt, but the prefix is strict
+      strictPrefixSplitAt :: Int64 -> BL.ByteString -> (BS.ByteString, BL.ByteString)
+      strictPrefixSplitAt i str = let tmp = BL.splitAt i str in (BL.toStrict (fst tmp), snd tmp)
+
+
 
 
 data BlobMapStore = BlobMap (IORef (Map.Map ExtantBlobName BL.ByteString))
