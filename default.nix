@@ -6,15 +6,12 @@ pkgs.haskellPackages.callPackage ({ base64-bytestring, errors, hindent, hlint
     pname = "bejnarkli";
     version = "0.0.1.0";
     src = lib.cleanSource ./.;
+    libraryHaskellDepends = [ base64-bytestring errors temporary utf8-string ];
     testHaskellDepends = [
-      base64-bytestring
-      errors
       QuickCheck
       quickcheck-instances
-      temporary
       test-framework
       test-framework-quickcheck2
-      utf8-string
     ] ++ lib.optionals lint [ hindent hlint ];
     postCheck = lib.optionalString lint ''
       hlint *.hs
