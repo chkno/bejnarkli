@@ -3,6 +3,7 @@ module Main where
 import Control.Monad ((>=>))
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
+import Data.ByteString.UTF8 (fromString)
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Framework as TF (Test, defaultMain, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
@@ -12,11 +13,12 @@ import Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import Bejnarkli
 
-prop_BlobStoreWriteRead ::
-     BlobStore bs => bs -> BS.ByteString -> BL.ByteString -> Property
-prop_BlobStoreWriteRead bs n b =
-  BS.length n > 0 ==> monadicIO $ do
-    ename <- run $ writeBlob bs n b
+password = fromString "test secret"
+
+prop_BlobStoreWriteRead :: BlobStore bs => bs -> BL.ByteString -> Property
+prop_BlobStoreWriteRead bs b =
+  monadicIO $ do
+    ename <- run $ writeBlob bs (blobName password b) b
     ret <- run $ getBlob bs ename
     assert $ ret == b
 

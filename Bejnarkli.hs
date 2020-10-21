@@ -1,5 +1,6 @@
 module Bejnarkli
-  ( blobNameLength
+  ( blobName
+  , blobNameLength
   , BlobStore
   , getBlob
   , newBlobMap
@@ -13,6 +14,8 @@ import Control.Error.Util (hush)
 import Control.Exception (bracket)
 import qualified Crypto.Hash.Algorithms
 import Crypto.Hash.IO (hashDigestSize)
+import Crypto.MAC.HMAC as HMAC
+import qualified Data.ByteArray as BA
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64.URL as Base64
 import qualified Data.ByteString.Lazy as BL
@@ -25,6 +28,8 @@ import System.FilePath ((</>))
 import System.IO (hClose)
 import System.IO.Temp (openBinaryTempFile)
 
+type BlobHMACAlgorithm = Crypto.Hash.Algorithms.SHA256
+
 blobHMACAlgorithm = Crypto.Hash.Algorithms.SHA256
 
 blobNameLength = hashDigestSize blobHMACAlgorithm
@@ -32,6 +37,11 @@ blobNameLength = hashDigestSize blobHMACAlgorithm
 newtype ExtantBlobName =
   ExtantBlob BS.ByteString
   deriving (Eq, Ord)
+
+blobName :: BS.ByteString -> BL.ByteString -> BS.ByteString
+blobName password blob =
+  let ctx = HMAC.initialize password :: HMAC.Context BlobHMACAlgorithm
+   in BA.convert $ HMAC.finalize $ HMAC.updates ctx $ BL.toChunks blob
 
 class BlobStore a where
   writeBlob :: a -> BS.ByteString -> BL.ByteString -> IO ExtantBlobName

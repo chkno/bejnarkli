@@ -25,6 +25,7 @@ common shared-properties
     directory,
     errors,
     filepath,
+    memory,
     temporary,
     utf8-string
   default-language:    Haskell2010
