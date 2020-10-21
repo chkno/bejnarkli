@@ -11,12 +11,13 @@ module Bejnarkli
 
 import Control.Error.Util (hush)
 import Control.Exception (bracket)
+import qualified Crypto.Hash.Algorithms
+import Crypto.Hash.IO (hashDigestSize)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64.URL as Base64
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 (fromString, toString)
 import Data.IORef
-import Data.Int (Int64)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (mapMaybe)
 import System.Directory (createDirectoryIfMissing, listDirectory, renameFile)
@@ -24,7 +25,9 @@ import System.FilePath
 import System.IO (hClose)
 import System.IO.Temp (openBinaryTempFile)
 
-blobNameLength = 3
+blobHMACAlgorithm = Crypto.Hash.Algorithms.SHA256
+
+blobNameLength = hashDigestSize blobHMACAlgorithm
 
 newtype ExtantBlobName =
   ExtantBlob BS.ByteString
@@ -39,10 +42,10 @@ class BlobStore a where
     uncurry (writeBlob bs) $ strictPrefixSplitAt blobNameLength stream
     where
       strictPrefixSplitAt ::
-           Int64 -> BL.ByteString -> (BS.ByteString, BL.ByteString)
+           Integral a => a -> BL.ByteString -> (BS.ByteString, BL.ByteString)
       -- |Like splitAt, but the prefix is strict
       strictPrefixSplitAt i str =
-        let tmp = BL.splitAt i str
+        let tmp = BL.splitAt (fromIntegral i) str
          in (BL.toStrict (fst tmp), snd tmp)
 
 newtype BlobMapStore =

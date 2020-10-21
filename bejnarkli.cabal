@@ -21,6 +21,7 @@ common shared-properties
     base64-bytestring,
     bytestring,
     containers,
+    cryptonite,
     directory,
     errors,
     filepath,
