@@ -30,7 +30,7 @@ in_git_index_in_tmpdir() {
 }
 
 verify() {
-  nix --print-build-logs build --no-link
+  nix --print-build-logs build --no-link --arg lint true
 }
 
 in_git_index_in_tmpdir verify
