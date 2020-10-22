@@ -98,7 +98,13 @@ blobFileName :: BlobDirStore -> BS.ByteString -> FilePath
 blobFileName (BlobDir d) blobname = d </> toString (Base64.encode blobname)
 
 unBlobFileName :: FilePath -> Maybe BS.ByteString
-unBlobFileName relpath = hush $ Base64.decode $ fromString relpath
+unBlobFileName relpath =
+  let name = hush $ Base64.decode $ fromString relpath
+   in name >>=
+      (\n ->
+         if BS.length n == blobNameLength
+           then Just n
+           else Nothing)
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
