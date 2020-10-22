@@ -46,16 +46,18 @@ class BlobStore a where
   writeBlob :: a -> BS.ByteString -> BL.ByteString -> IO ExtantBlobName
   listBlobs :: a -> IO [ExtantBlobName]
   getBlob :: a -> ExtantBlobName -> IO BL.ByteString
-  writeNamePrefixedBlob :: a -> BL.ByteString -> IO ExtantBlobName
-  writeNamePrefixedBlob bs stream =
-    uncurry (writeBlob bs) $ strictPrefixSplitAt blobNameLength stream
-    where
-      strictPrefixSplitAt ::
-           Integral a => a -> BL.ByteString -> (BS.ByteString, BL.ByteString)
-      -- |Like splitAt, but the prefix is strict
-      strictPrefixSplitAt i str =
-        let tmp = BL.splitAt (fromIntegral i) str
-         in (BL.toStrict (fst tmp), snd tmp)
+
+writeNamePrefixedBlob ::
+     BlobStore bs => bs -> BL.ByteString -> IO ExtantBlobName
+writeNamePrefixedBlob bs stream =
+  uncurry (writeBlob bs) $ strictPrefixSplitAt blobNameLength stream
+  where
+    strictPrefixSplitAt ::
+         Integral a => a -> BL.ByteString -> (BS.ByteString, BL.ByteString)
+    -- |Like splitAt, but the prefix is strict
+    strictPrefixSplitAt i str =
+      let tmp = BL.splitAt (fromIntegral i) str
+       in (BL.toStrict (fst tmp), snd tmp)
 
 newtype BlobMapStore =
   BlobMap (IORef (Map.Map ExtantBlobName BL.ByteString))
