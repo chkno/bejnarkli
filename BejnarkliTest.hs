@@ -25,11 +25,12 @@ prop_BlobStoreWriteRead bs b =
 
 prop_BlobStoreWritePrefixedRead ::
      BlobStore bs => bs -> BL.ByteString -> Property
-prop_BlobStoreWritePrefixedRead bs stream =
-  BL.length stream > fromIntegral blobNameLength ==> monadicIO $ do
-    ename <- run $ fromJust <$> writeNamePrefixedBlob bs stream
-    ret <- run $ getBlob bs ename
-    assert $ ret == BL.drop (fromIntegral blobNameLength) stream
+prop_BlobStoreWritePrefixedRead bs b =
+  let stream = BL.append (BL.fromStrict $ blobName password b) b
+   in monadicIO $ do
+        ename <- run $ fromJust <$> writeNamePrefixedBlob bs stream
+        ret <- run $ getBlob bs ename
+        assert $ ret == b
 
 main :: IO ()
 main = withSystemTempDirectory "bej" $ tests >=> TF.defaultMain
