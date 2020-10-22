@@ -1,13 +1,15 @@
 module Bejnarkli
-  ( blobName
+  ( abort
+  , blobName
   , blobNameLength
+  , commit
   , getBlob
   , newUnverifiedBlobDir
   , newUnverifiedBlobMap
   , someFunc
+  , stageBlob
   , UnverifiedBlobStore
   , writeNamePrefixedBlob
-  , writeUntrustedBlob
   ) where
 
 import qualified Crypto.Hash.Algorithms
@@ -42,19 +44,21 @@ blobName password blob =
   let ctx = HMAC.initialize password :: HMAC.Context BlobHMACAlgorithm
    in BA.convert $ HMAC.finalize $ HMAC.updates ctx $ BL.toChunks blob
 
+data StagedBlobHandle =
+  StagedBlobHandle
+    { commit :: IO ExtantBlobName
+    , abort :: IO ()
+    }
+
 class UnverifiedBlobStore a where
-  writeUntrustedBlob ::
-       a -> BS.ByteString -> BL.ByteString -> IO (Maybe ExtantBlobName)
+  stageBlob :: a -> BS.ByteString -> BL.ByteString -> StagedBlobHandle
   listBlobs :: a -> IO [ExtantBlobName]
   getBlob :: a -> ExtantBlobName -> IO BL.ByteString
 
 writeNamePrefixedBlob ::
-     UnverifiedBlobStore ubs
-  => ubs
-  -> BL.ByteString
-  -> IO (Maybe ExtantBlobName)
+     UnverifiedBlobStore ubs => ubs -> BL.ByteString -> IO ExtantBlobName
 writeNamePrefixedBlob ubs stream =
-  uncurry (writeUntrustedBlob ubs) $ strictPrefixSplitAt blobNameLength stream
+  commit (uncurry (stageBlob ubs) $ strictPrefixSplitAt blobNameLength stream)
   where
     strictPrefixSplitAt ::
          Integral a => a -> BL.ByteString -> (BS.ByteString, BL.ByteString)
@@ -70,10 +74,14 @@ newUnverifiedBlobMap :: IO BlobMapStore
 newUnverifiedBlobMap = BlobMap <$> newIORef Map.empty
 
 instance UnverifiedBlobStore BlobMapStore where
-  writeUntrustedBlob (BlobMap rm) name blob =
-    let ename = ExtantBlob name
-     in do modifyIORef' rm (Map.insert ename blob)
-           pure $ Just ename
+  stageBlob (BlobMap rm) name blob =
+    StagedBlobHandle
+      { commit =
+          let ename = ExtantBlob name
+           in do modifyIORef' rm (Map.insert ename blob)
+                 pure ename
+      , abort = pure ()
+      }
   listBlobs (BlobMap rm) = Map.keys <$> readIORef rm
   getBlob (BlobMap rm) name = do
     m <- readIORef rm
@@ -88,13 +96,17 @@ newUnverifiedBlobDir path = do
   pure $ BlobDir path
 
 instance UnverifiedBlobStore BlobDirStore where
-  writeUntrustedBlob bd name blob =
-    withOutputFile
-      (blobFileName bd name)
-      (\tmpfile -> do
-         hSetBinaryMode tmpfile True
-         BL.hPut tmpfile blob
-         pure $ Just $ ExtantBlob name)
+  stageBlob bd name blob =
+    StagedBlobHandle
+      { commit =
+          withOutputFile
+            (blobFileName bd name)
+            (\tmpfile -> do
+               hSetBinaryMode tmpfile True
+               BL.hPut tmpfile blob
+               pure $ ExtantBlob name)
+      , abort = pure ()
+      }
   listBlobs (BlobDir d) =
     fmap ExtantBlob . mapMaybe unBlobFileName <$> listDirectory d
   getBlob bd (ExtantBlob name) = BL.readFile (blobFileName bd name)

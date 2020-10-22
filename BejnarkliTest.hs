@@ -20,7 +20,7 @@ prop_BlobStoreWriteRead ::
      UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
 prop_BlobStoreWriteRead ubs b =
   monadicIO $ do
-    ename <- run $ fromJust <$> writeUntrustedBlob ubs (blobName password b) b
+    ename <- run $ commit $ stageBlob ubs (blobName password b) b
     ret <- run $ getBlob ubs ename
     assert $ ret == b
 
@@ -29,7 +29,7 @@ prop_BlobStoreWritePrefixedRead ::
 prop_BlobStoreWritePrefixedRead ubs b =
   let stream = BL.append (BL.fromStrict $ blobName password b) b
    in monadicIO $ do
-        ename <- run $ fromJust <$> writeNamePrefixedBlob ubs stream
+        ename <- run $ writeNamePrefixedBlob ubs stream
         ret <- run $ getBlob ubs ename
         assert $ ret == b
 
