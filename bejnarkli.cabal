@@ -23,7 +23,6 @@ common shared-properties
     containers,
     cryptonite,
     directory,
-    errors,
     filepath,
     memory,
     safeio,

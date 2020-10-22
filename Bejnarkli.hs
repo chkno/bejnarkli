@@ -10,7 +10,6 @@ module Bejnarkli
   , writeNamePrefixedBlob
   ) where
 
-import Control.Error.Util (hush)
 import qualified Crypto.Hash.Algorithms
 import Crypto.Hash.IO (hashDigestSize)
 import Crypto.MAC.HMAC as HMAC
@@ -99,11 +98,12 @@ blobFileName (BlobDir d) blobname = d </> toString (Base64.encode blobname)
 
 unBlobFileName :: FilePath -> Maybe BS.ByteString
 unBlobFileName relpath =
-  hush (Base64.decode $ fromString relpath) >>=
-  (\n ->
-     if BS.length n == blobNameLength
-       then Just n
-       else Nothing)
+  case Base64.decode $ fromString relpath of
+    Left _ -> Nothing
+    Right n ->
+      if BS.length n == blobNameLength
+        then Just n
+        else Nothing
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
