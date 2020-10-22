@@ -29,6 +29,10 @@ common shared-properties
     temporary,
     utf8-string
   default-language:    Haskell2010
+  ghc-options:
+  - -Weverything
+  - -Wcompat
+  - -Werror
 
 library
   import: shared-properties
