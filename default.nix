@@ -1,14 +1,14 @@
 { pkgs ? import <nixpkgs> { }, lint ? false, }:
-pkgs.haskellPackages.callPackage ({ base64-bytestring, cryptonite, hindent
-  , hlint, lib, memory, mkDerivation, nixfmt, QuickCheck, quickcheck-instances
-  , safeio, stdenv, temporary, test-framework, test-framework-quickcheck2
-  , utf8-string, }:
+pkgs.haskellPackages.callPackage ({ base64-bytestring, hindent, hlint, lib
+  , memory, mkDerivation, nixfmt, QuickCheck, quickcheck-instances, safeio, SHA
+  , stdenv, temporary, test-framework, test-framework-quickcheck2, utf8-string,
+  }:
   mkDerivation {
     pname = "bejnarkli";
     version = "0.0.1.0";
     src = lib.cleanSource ./.;
     libraryHaskellDepends =
-      [ base64-bytestring cryptonite memory safeio temporary utf8-string ];
+      [ base64-bytestring memory safeio SHA temporary utf8-string ];
     testHaskellDepends = [
       QuickCheck
       quickcheck-instances

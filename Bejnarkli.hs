@@ -13,14 +13,11 @@ module Bejnarkli
   , writeNamePrefixedBlob
   ) where
 
-import qualified Crypto.Hash.Algorithms
-import Crypto.Hash.IO (hashDigestSize)
-import qualified Crypto.MAC.HMAC as HMAC
-import qualified Data.ByteArray as BA
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64.URL as Base64
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 (fromString, toString)
+import Data.Digest.Pure.SHA (bytestringDigest, hmacSha256)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (mapMaybe)
@@ -29,12 +26,8 @@ import System.FilePath ((</>))
 import System.IO (hSetBinaryMode)
 import System.IO.SafeWrite (withOutputFile)
 
-type BlobHMACAlgorithm = Crypto.Hash.Algorithms.SHA256
-
-blobHMACAlgorithm = Crypto.Hash.Algorithms.SHA256
-
 blobNameLength :: Int
-blobNameLength = hashDigestSize blobHMACAlgorithm
+blobNameLength = 32
 
 newtype ExtantBlobName =
   ExtantBlob BS.ByteString
@@ -42,8 +35,7 @@ newtype ExtantBlobName =
 
 blobName :: BS.ByteString -> BL.ByteString -> BS.ByteString
 blobName password blob =
-  let ctx = HMAC.initialize password :: HMAC.Context BlobHMACAlgorithm
-   in BA.convert $ HMAC.finalize $ HMAC.updates ctx $ BL.toChunks blob
+  BL.toStrict $ bytestringDigest $ hmacSha256 (BL.fromStrict password) blob
 
 data StagedBlobHandle =
   StagedBlobHandle
