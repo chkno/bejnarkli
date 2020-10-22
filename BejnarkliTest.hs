@@ -4,6 +4,7 @@ import Control.Monad ((>=>))
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 (fromString)
+import Data.Maybe (fromJust)
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Framework as TF (Test, defaultMain, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
@@ -18,7 +19,7 @@ password = fromString "test secret"
 prop_BlobStoreWriteRead :: BlobStore bs => bs -> BL.ByteString -> Property
 prop_BlobStoreWriteRead bs b =
   monadicIO $ do
-    ename <- run $ writeUntrustedBlob bs (blobName password b) b
+    ename <- run $ fromJust <$> writeUntrustedBlob bs (blobName password b) b
     ret <- run $ getBlob bs ename
     assert $ ret == b
 
@@ -26,7 +27,7 @@ prop_BlobStoreWritePrefixedRead ::
      BlobStore bs => bs -> BL.ByteString -> Property
 prop_BlobStoreWritePrefixedRead bs stream =
   BL.length stream > fromIntegral blobNameLength ==> monadicIO $ do
-    ename <- run $ writeNamePrefixedBlob bs stream
+    ename <- run $ fromJust <$> writeNamePrefixedBlob bs stream
     ret <- run $ getBlob bs ename
     assert $ ret == BL.drop (fromIntegral blobNameLength) stream
 

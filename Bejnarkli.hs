@@ -43,12 +43,13 @@ blobName password blob =
    in BA.convert $ HMAC.finalize $ HMAC.updates ctx $ BL.toChunks blob
 
 class BlobStore a where
-  writeUntrustedBlob :: a -> BS.ByteString -> BL.ByteString -> IO ExtantBlobName
+  writeUntrustedBlob ::
+       a -> BS.ByteString -> BL.ByteString -> IO (Maybe ExtantBlobName)
   listBlobs :: a -> IO [ExtantBlobName]
   getBlob :: a -> ExtantBlobName -> IO BL.ByteString
 
 writeNamePrefixedBlob ::
-     BlobStore bs => bs -> BL.ByteString -> IO ExtantBlobName
+     BlobStore bs => bs -> BL.ByteString -> IO (Maybe ExtantBlobName)
 writeNamePrefixedBlob bs stream =
   uncurry (writeUntrustedBlob bs) $ strictPrefixSplitAt blobNameLength stream
   where
@@ -69,7 +70,7 @@ instance BlobStore BlobMapStore where
   writeUntrustedBlob (BlobMap rm) name blob =
     let ename = ExtantBlob name
      in do modifyIORef' rm (Map.insert ename blob)
-           pure ename
+           pure $ Just ename
   listBlobs (BlobMap rm) = Map.keys <$> readIORef rm
   getBlob (BlobMap rm) name = do
     m <- readIORef rm
@@ -90,7 +91,7 @@ instance BlobStore BlobDirStore where
       (\tmpfile -> do
          hSetBinaryMode tmpfile True
          BL.hPut tmpfile blob
-         pure $ ExtantBlob name)
+         pure $ Just $ ExtantBlob name)
   listBlobs (BlobDir d) =
     fmap ExtantBlob . mapMaybe unBlobFileName <$> listDirectory d
   getBlob bd (ExtantBlob name) = BL.readFile (blobFileName bd name)
