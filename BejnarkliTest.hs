@@ -18,7 +18,7 @@ password = fromString "test secret"
 prop_BlobStoreWriteRead :: BlobStore bs => bs -> BL.ByteString -> Property
 prop_BlobStoreWriteRead bs b =
   monadicIO $ do
-    ename <- run $ writeBlob bs (blobName password b) b
+    ename <- run $ writeUntrustedBlob bs (blobName password b) b
     ret <- run $ getBlob bs ename
     assert $ ret == b
 

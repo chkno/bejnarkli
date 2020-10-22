@@ -6,8 +6,8 @@ module Bejnarkli
   , newBlobMap
   , newBlobDir
   , someFunc
-  , writeBlob
   , writeNamePrefixedBlob
+  , writeUntrustedBlob
   ) where
 
 import qualified Crypto.Hash.Algorithms
@@ -43,14 +43,14 @@ blobName password blob =
    in BA.convert $ HMAC.finalize $ HMAC.updates ctx $ BL.toChunks blob
 
 class BlobStore a where
-  writeBlob :: a -> BS.ByteString -> BL.ByteString -> IO ExtantBlobName
+  writeUntrustedBlob :: a -> BS.ByteString -> BL.ByteString -> IO ExtantBlobName
   listBlobs :: a -> IO [ExtantBlobName]
   getBlob :: a -> ExtantBlobName -> IO BL.ByteString
 
 writeNamePrefixedBlob ::
      BlobStore bs => bs -> BL.ByteString -> IO ExtantBlobName
 writeNamePrefixedBlob bs stream =
-  uncurry (writeBlob bs) $ strictPrefixSplitAt blobNameLength stream
+  uncurry (writeUntrustedBlob bs) $ strictPrefixSplitAt blobNameLength stream
   where
     strictPrefixSplitAt ::
          Integral a => a -> BL.ByteString -> (BS.ByteString, BL.ByteString)
@@ -66,7 +66,7 @@ newBlobMap :: IO BlobMapStore
 newBlobMap = BlobMap <$> newIORef Map.empty
 
 instance BlobStore BlobMapStore where
-  writeBlob (BlobMap rm) name blob =
+  writeUntrustedBlob (BlobMap rm) name blob =
     let ename = ExtantBlob name
      in do modifyIORef' rm (Map.insert ename blob)
            pure ename
@@ -84,7 +84,7 @@ newBlobDir path = do
   pure $ BlobDir path
 
 instance BlobStore BlobDirStore where
-  writeBlob bd name blob =
+  writeUntrustedBlob bd name blob =
     withOutputFile
       (blobFileName bd name)
       (\tmpfile -> do
