@@ -8,7 +8,7 @@ import System.IO.Temp (withSystemTempDirectory)
 import Test.Framework as TF (Test, defaultMain, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck (Property, (==>), quickCheck)
-import qualified Test.QuickCheck.Instances.ByteString
+import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import Bejnarkli
