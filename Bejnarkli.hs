@@ -1,11 +1,11 @@
 module Bejnarkli
   ( blobName
   , blobNameLength
-  , BlobStore
   , getBlob
-  , newBlobMap
-  , newBlobDir
+  , newUnverifiedBlobDir
+  , newUnverifiedBlobMap
   , someFunc
+  , UnverifiedBlobStore
   , writeNamePrefixedBlob
   , writeUntrustedBlob
   ) where
@@ -42,16 +42,19 @@ blobName password blob =
   let ctx = HMAC.initialize password :: HMAC.Context BlobHMACAlgorithm
    in BA.convert $ HMAC.finalize $ HMAC.updates ctx $ BL.toChunks blob
 
-class BlobStore a where
+class UnverifiedBlobStore a where
   writeUntrustedBlob ::
        a -> BS.ByteString -> BL.ByteString -> IO (Maybe ExtantBlobName)
   listBlobs :: a -> IO [ExtantBlobName]
   getBlob :: a -> ExtantBlobName -> IO BL.ByteString
 
 writeNamePrefixedBlob ::
-     BlobStore bs => bs -> BL.ByteString -> IO (Maybe ExtantBlobName)
-writeNamePrefixedBlob bs stream =
-  uncurry (writeUntrustedBlob bs) $ strictPrefixSplitAt blobNameLength stream
+     UnverifiedBlobStore ubs
+  => ubs
+  -> BL.ByteString
+  -> IO (Maybe ExtantBlobName)
+writeNamePrefixedBlob ubs stream =
+  uncurry (writeUntrustedBlob ubs) $ strictPrefixSplitAt blobNameLength stream
   where
     strictPrefixSplitAt ::
          Integral a => a -> BL.ByteString -> (BS.ByteString, BL.ByteString)
@@ -63,10 +66,10 @@ writeNamePrefixedBlob bs stream =
 newtype BlobMapStore =
   BlobMap (IORef (Map.Map ExtantBlobName BL.ByteString))
 
-newBlobMap :: IO BlobMapStore
-newBlobMap = BlobMap <$> newIORef Map.empty
+newUnverifiedBlobMap :: IO BlobMapStore
+newUnverifiedBlobMap = BlobMap <$> newIORef Map.empty
 
-instance BlobStore BlobMapStore where
+instance UnverifiedBlobStore BlobMapStore where
   writeUntrustedBlob (BlobMap rm) name blob =
     let ename = ExtantBlob name
      in do modifyIORef' rm (Map.insert ename blob)
@@ -79,12 +82,12 @@ instance BlobStore BlobMapStore where
 newtype BlobDirStore =
   BlobDir FilePath
 
-newBlobDir :: FilePath -> IO BlobDirStore
-newBlobDir path = do
+newUnverifiedBlobDir :: FilePath -> IO BlobDirStore
+newUnverifiedBlobDir path = do
   createDirectoryIfMissing True path
   pure $ BlobDir path
 
-instance BlobStore BlobDirStore where
+instance UnverifiedBlobStore BlobDirStore where
   writeUntrustedBlob bd name blob =
     withOutputFile
       (blobFileName bd name)

@@ -16,20 +16,21 @@ import Bejnarkli
 
 password = fromString "test secret"
 
-prop_BlobStoreWriteRead :: BlobStore bs => bs -> BL.ByteString -> Property
-prop_BlobStoreWriteRead bs b =
+prop_BlobStoreWriteRead ::
+     UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
+prop_BlobStoreWriteRead ubs b =
   monadicIO $ do
-    ename <- run $ fromJust <$> writeUntrustedBlob bs (blobName password b) b
-    ret <- run $ getBlob bs ename
+    ename <- run $ fromJust <$> writeUntrustedBlob ubs (blobName password b) b
+    ret <- run $ getBlob ubs ename
     assert $ ret == b
 
 prop_BlobStoreWritePrefixedRead ::
-     BlobStore bs => bs -> BL.ByteString -> Property
-prop_BlobStoreWritePrefixedRead bs b =
+     UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
+prop_BlobStoreWritePrefixedRead ubs b =
   let stream = BL.append (BL.fromStrict $ blobName password b) b
    in monadicIO $ do
-        ename <- run $ fromJust <$> writeNamePrefixedBlob bs stream
-        ret <- run $ getBlob bs ename
+        ename <- run $ fromJust <$> writeNamePrefixedBlob ubs stream
+        ret <- run $ getBlob ubs ename
         assert $ ret == b
 
 main :: IO ()
@@ -37,8 +38,8 @@ main = withSystemTempDirectory "bej" $ tests >=> TF.defaultMain
 
 tests :: FilePath -> IO [Test]
 tests tmpdir = do
-  m <- newBlobMap
-  d <- newBlobDir tmpdir
+  m <- newUnverifiedBlobMap
+  d <- newUnverifiedBlobDir tmpdir
   pure
     [ testProperty "Map Write Read" (prop_BlobStoreWriteRead m)
     , testProperty "Map Write Prefixed Read" (prop_BlobStoreWritePrefixedRead m)
