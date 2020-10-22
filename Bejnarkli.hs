@@ -11,7 +11,6 @@ module Bejnarkli
   ) where
 
 import Control.Error.Util (hush)
-import Control.Exception (bracket)
 import qualified Crypto.Hash.Algorithms
 import Crypto.Hash.IO (hashDigestSize)
 import Crypto.MAC.HMAC as HMAC
@@ -25,7 +24,8 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (mapMaybe)
 import System.Directory (createDirectoryIfMissing, listDirectory, renameFile)
 import System.FilePath ((</>))
-import System.IO (hClose)
+import System.IO (hSetBinaryMode)
+import System.IO.SafeWrite (withOutputFile)
 import System.IO.Temp (openBinaryTempFile)
 
 type BlobHMACAlgorithm = Crypto.Hash.Algorithms.SHA256
@@ -79,20 +79,17 @@ newtype BlobDirStore =
 
 newBlobDir :: FilePath -> IO BlobDirStore
 newBlobDir path = do
-  createDirectoryIfMissing True $ path </> "incoming"
+  createDirectoryIfMissing True path
   pure $ BlobDir path
 
 instance BlobStore BlobDirStore where
   writeBlob bd name blob =
-    bracket
-      (openBinaryTempFile (d </> "incoming") "new")
-      (hClose . snd)
-      (\(tmpname, tmpfile) -> do
+    withOutputFile
+      (blobFileName bd name)
+      (\tmpfile -> do
+         hSetBinaryMode tmpfile True
          BL.hPut tmpfile blob
-         renameFile tmpname (blobFileName bd name)
          pure $ ExtantBlob name)
-    where
-      (BlobDir d) = bd
   listBlobs (BlobDir d) =
     fmap ExtantBlob . mapMaybe unBlobFileName <$> listDirectory d
   getBlob bd (ExtantBlob name) = BL.readFile (blobFileName bd name)
