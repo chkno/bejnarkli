@@ -1,18 +1,27 @@
-module Main where
+module Main
+  ( main
+  ) where
 
 import Control.Monad ((>=>))
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 (fromString)
-import Data.Maybe (fromJust)
 import System.IO.Temp (withSystemTempDirectory)
-import Test.Framework as TF (Test, defaultMain, testGroup)
+import Test.Framework as TF (Test, defaultMain)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
-import Test.QuickCheck (Property, (==>), quickCheck)
+import Test.QuickCheck (Property)
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import Bejnarkli
+  ( UnverifiedBlobStore
+  , blobName
+  , commit
+  , getBlob
+  , newUnverifiedBlobDir
+  , newUnverifiedBlobMap
+  , stageBlob
+  , writeNamePrefixedBlob
+  )
 
 password = fromString "test secret"
 

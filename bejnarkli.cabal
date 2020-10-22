@@ -30,9 +30,11 @@ common shared-properties
     utf8-string
   default-language:    Haskell2010
   ghc-options:
-  - -Weverything
-  - -Wcompat
-  - -Werror
+    -Wcompat
+    -Werror
+    -Weverything
+    -Wno-implicit-prelude
+    -Wno-unsafe
 
 library
   import: shared-properties

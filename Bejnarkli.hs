@@ -4,6 +4,7 @@ module Bejnarkli
   , blobNameLength
   , commit
   , getBlob
+  , listBlobs
   , newUnverifiedBlobDir
   , newUnverifiedBlobMap
   , someFunc
@@ -14,7 +15,7 @@ module Bejnarkli
 
 import qualified Crypto.Hash.Algorithms
 import Crypto.Hash.IO (hashDigestSize)
-import Crypto.MAC.HMAC as HMAC
+import qualified Crypto.MAC.HMAC as HMAC
 import qualified Data.ByteArray as BA
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64.URL as Base64
@@ -23,16 +24,16 @@ import Data.ByteString.UTF8 (fromString, toString)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (mapMaybe)
-import System.Directory (createDirectoryIfMissing, listDirectory, renameFile)
+import System.Directory (createDirectoryIfMissing, listDirectory)
 import System.FilePath ((</>))
 import System.IO (hSetBinaryMode)
 import System.IO.SafeWrite (withOutputFile)
-import System.IO.Temp (openBinaryTempFile)
 
 type BlobHMACAlgorithm = Crypto.Hash.Algorithms.SHA256
 
 blobHMACAlgorithm = Crypto.Hash.Algorithms.SHA256
 
+blobNameLength :: Int
 blobNameLength = hashDigestSize blobHMACAlgorithm
 
 newtype ExtantBlobName =
