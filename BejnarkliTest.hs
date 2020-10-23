@@ -2,13 +2,11 @@ module Main
   ( main
   ) where
 
-import Control.Monad ((>=>))
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 (fromString)
+import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
 import System.IO.Temp (withSystemTempDirectory)
-import Test.Framework as TF (Test, defaultMain)
-import Test.Framework.Providers.QuickCheck2 (testProperty)
-import Test.QuickCheck (Property)
+import Test.QuickCheck (Property, Result, isSuccess, quickCheckResult)
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, run)
 
@@ -42,16 +40,25 @@ prop_BlobStoreWritePrefixedRead ubs b =
         ret <- run $ getBlob ubs ename
         assert $ ret == b
 
-main :: IO ()
-main = withSystemTempDirectory "bej" $ tests >=> TF.defaultMain
+tests :: IO [Result]
+tests =
+  withSystemTempDirectory
+    "bej"
+    (\tmpdir -> do
+       m <- newUnverifiedBlobMap
+       d <- newUnverifiedBlobDir tmpdir
+       mapM
+         quickCheckResult
+         [ prop_BlobStoreWriteRead m
+         , prop_BlobStoreWritePrefixedRead m
+         , prop_BlobStoreWriteRead d
+         , prop_BlobStoreWritePrefixedRead d
+         ])
 
-tests :: FilePath -> IO [Test]
-tests tmpdir = do
-  m <- newUnverifiedBlobMap
-  d <- newUnverifiedBlobDir tmpdir
-  pure
-    [ testProperty "Map Write Read" (prop_BlobStoreWriteRead m)
-    , testProperty "Map Write Prefixed Read" (prop_BlobStoreWritePrefixedRead m)
-    , testProperty "Dir Write Read" (prop_BlobStoreWriteRead d)
-    , testProperty "Dir Write Prefixed Read" (prop_BlobStoreWritePrefixedRead d)
-    ]
+main :: IO ()
+main = do
+  allPassed <- and . fmap isSuccess <$> tests
+  exitWith
+    (if allPassed
+       then ExitSuccess
+       else ExitFailure 1)

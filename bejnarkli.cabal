@@ -35,7 +35,6 @@ common shared-properties
     -Weverything
     -Wno-implicit-prelude
     -Wno-safe
-    -Wno-unsafe
 
 library
   import: shared-properties
@@ -53,6 +52,4 @@ test-suite bejnarkli-test
   main-is:             BejnarkliTest.hs
   build-depends:
     QuickCheck,
-    quickcheck-instances,
-    test-framework,
-    test-framework-quickcheck2
+    quickcheck-instances
