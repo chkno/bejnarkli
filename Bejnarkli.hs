@@ -15,6 +15,7 @@ module Bejnarkli
   , UnverifiedBlobStore
   , writeNamePrefixedBlob
   , writeTrustedBlob
+  , writeUntrustedBlob
   ) where
 
 import Control.Exception (bracket)
@@ -156,6 +157,19 @@ writeTrustedBlob ::
 writeTrustedBlob bs password blob = do
   staged <- stageBlob bs blob
   commit staged (blobName password (blobData staged))
+
+writeUntrustedBlob ::
+     UnverifiedBlobStore bs
+  => bs
+  -> BS.ByteString
+  -> BS.ByteString
+  -> BL.ByteString
+  -> IO (Maybe ExtantBlobName)
+writeUntrustedBlob bs password expectedHash blob = do
+  staged <- stageBlob bs blob
+  if expectedHash == blobName password (blobData staged)
+    then Just <$> commit staged expectedHash
+    else abort staged >> pure Nothing
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"

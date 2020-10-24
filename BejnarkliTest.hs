@@ -3,7 +3,9 @@ module Main
   ) where
 
 import qualified Data.ByteString.Lazy as BL
-import Data.ByteString.UTF8 (fromString)
+import qualified Data.ByteString.Lazy.UTF8 as U8L
+import qualified Data.ByteString.UTF8 as U8S
+import Data.Maybe (fromJust, isNothing)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
 import System.IO.Temp (withSystemTempDirectory)
 import Test.QuickCheck (Property, Result, isSuccess, quickCheckResult)
@@ -18,17 +20,42 @@ import Bejnarkli
   , newUnverifiedBlobMap
   , writeNamePrefixedBlob
   , writeTrustedBlob
+  , writeUntrustedBlob
   )
 
-password = fromString "test secret"
+password = U8S.fromString "test secret"
 
-prop_BlobStoreWriteRead ::
+prop_BlobStoreWriteReadTrusted ::
      UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
-prop_BlobStoreWriteRead ubs b =
+prop_BlobStoreWriteReadTrusted ubs b =
   monadicIO $ do
     ename <- run $ writeTrustedBlob ubs password b
     ret <- run $ getBlob ubs ename
     assert $ ret == b
+
+prop_BlobStoreWriteReadCorrectHash ::
+     UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
+prop_BlobStoreWriteReadCorrectHash ubs b =
+  monadicIO $ do
+    ename <- run $ writeUntrustedBlob ubs password (blobName password b) b
+    ret <- run $ getBlob ubs (fromJust ename)
+    assert $ ret == b
+
+prop_BlobStoreWriteWrongHash ::
+     UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
+prop_BlobStoreWriteWrongHash ubs b =
+  monadicIO $
+  let wrongHash = blobName password (BL.append b (U8L.fromString "different"))
+   in do ename <- run $ writeUntrustedBlob ubs password wrongHash b
+         assert $ isNothing ename
+
+prop_BlobStoreWriteWrongPassword ::
+     UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
+prop_BlobStoreWriteWrongPassword ubs b =
+  monadicIO $
+  let wrongHash = blobName (U8S.fromString "wrong password") b
+   in do ename <- run $ writeUntrustedBlob ubs password wrongHash b
+         assert $ isNothing ename
 
 prop_BlobStoreWritePrefixedRead ::
      UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
@@ -48,9 +75,15 @@ tests =
        d <- newUnverifiedBlobDir tmpdir
        mapM
          quickCheckResult
-         [ prop_BlobStoreWriteRead m
+         [ prop_BlobStoreWriteReadTrusted m
+         , prop_BlobStoreWriteReadCorrectHash m
+         , prop_BlobStoreWriteWrongHash m
+         , prop_BlobStoreWriteWrongPassword m
          , prop_BlobStoreWritePrefixedRead m
-         , prop_BlobStoreWriteRead d
+         , prop_BlobStoreWriteReadTrusted d
+         , prop_BlobStoreWriteReadCorrectHash d
+         , prop_BlobStoreWriteWrongHash d
+         , prop_BlobStoreWriteWrongPassword d
          , prop_BlobStoreWritePrefixedRead d
          ])
 
