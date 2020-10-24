@@ -18,6 +18,7 @@ import Bejnarkli
   , getBlob
   , newBlobDir
   , newBlobMap
+  , someFunc
   , writeNamePrefixedBlob
   , writeTrustedBlob
   , writeUntrustedBlob
@@ -110,6 +111,7 @@ tests =
 
 main :: IO ()
 main = do
+  someFunc
   allPassed <- and . fmap isSuccess <$> tests
   exitWith
     (if allPassed
