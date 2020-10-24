@@ -74,11 +74,14 @@ class BlobStore a where
   getBlob :: a -> ExtantBlobName -> IO BL.ByteString
 
 writeNamePrefixedBlob ::
-     BlobStore bs => bs -> BL.ByteString -> IO ExtantBlobName
-writeNamePrefixedBlob bs stream =
+     BlobStore bs
+  => bs
+  -> BS.ByteString
+  -> BL.ByteString
+  -> IO (Maybe ExtantBlobName)
+writeNamePrefixedBlob bs password stream =
   let (name, blob) = strictPrefixSplitAt blobNameLength stream
-   in do sbh <- stageBlob bs blob
-         commit sbh name
+   in writeUntrustedBlob bs password name blob
   where
     strictPrefixSplitAt ::
          Integral a => a -> BL.ByteString -> (BS.ByteString, BL.ByteString)

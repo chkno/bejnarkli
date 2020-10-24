@@ -61,9 +61,27 @@ prop_BlobStoreWritePrefixedRead ::
 prop_BlobStoreWritePrefixedRead bs b =
   let stream = BL.append (BL.fromStrict $ blobName password b) b
    in monadicIO $ do
-        ename <- run $ writeNamePrefixedBlob bs stream
-        ret <- run $ getBlob bs ename
+        ename <- run $ writeNamePrefixedBlob bs password stream
+        ret <- run $ getBlob bs (fromJust ename)
         assert $ ret == b
+
+prop_BlobStoreWritePrefixedWrongHash ::
+     BlobStore bs => bs -> BL.ByteString -> Property
+prop_BlobStoreWritePrefixedWrongHash bs b =
+  monadicIO $
+  let wrongHash = blobName password (BL.append b (U8L.fromString "different"))
+      stream = BL.append (BL.fromStrict wrongHash) b
+   in do ename <- run $ writeNamePrefixedBlob bs password stream
+         assert $ isNothing ename
+
+prop_BlobStoreWritePrefixedWrongPassword ::
+     BlobStore bs => bs -> BL.ByteString -> Property
+prop_BlobStoreWritePrefixedWrongPassword bs b =
+  monadicIO $
+  let wrongHash = blobName (U8S.fromString "wrong password") b
+      stream = BL.append (BL.fromStrict wrongHash) b
+   in do ename <- run $ writeNamePrefixedBlob bs password stream
+         assert $ isNothing ename
 
 tests :: IO [Result]
 tests =
@@ -79,11 +97,15 @@ tests =
          , prop_BlobStoreWriteWrongHash m
          , prop_BlobStoreWriteWrongPassword m
          , prop_BlobStoreWritePrefixedRead m
+         , prop_BlobStoreWritePrefixedWrongHash m
+         , prop_BlobStoreWritePrefixedWrongPassword m
          , prop_BlobStoreWriteReadTrusted d
          , prop_BlobStoreWriteReadCorrectHash d
          , prop_BlobStoreWriteWrongHash d
          , prop_BlobStoreWriteWrongPassword d
          , prop_BlobStoreWritePrefixedRead d
+         , prop_BlobStoreWritePrefixedWrongHash d
+         , prop_BlobStoreWritePrefixedWrongPassword d
          ])
 
 main :: IO ()
