@@ -29,8 +29,7 @@ prop_BlobStoreWriteRead ::
 prop_BlobStoreWriteRead ubs b =
   monadicIO $ do
     staged <- run $ stageBlob ubs b
-    stagedB <- run $ blobData staged
-    ename <- run $ commit staged (blobName password stagedB)
+    ename <- run $ commit staged (blobName password (blobData staged))
     ret <- run $ getBlob ubs ename
     assert $ ret == b
 

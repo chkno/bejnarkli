@@ -61,7 +61,7 @@ teeToTempFile dir template stream =
 
 data StagedBlobHandle =
   StagedBlobHandle
-    { blobData :: IO BL.ByteString
+    { blobData :: BL.ByteString
     , commit :: BS.ByteString -> IO ExtantBlobName
     , abort :: IO ()
     }
@@ -95,7 +95,7 @@ instance UnverifiedBlobStore BlobMapStore where
   stageBlob (BlobMap rm) blob =
     pure
       StagedBlobHandle
-        { blobData = pure blob
+        { blobData = blob
         , commit =
             \name ->
               let ename = ExtantBlob name
@@ -121,7 +121,7 @@ instance UnverifiedBlobStore BlobDirStore where
     (teeWrappedBlob, tmpPath) <- teeToTempFile (d </> "incoming") "new" blob
     pure
       StagedBlobHandle
-        { blobData = pure teeWrappedBlob
+        { blobData = teeWrappedBlob
         , commit =
             \name -> do
               renameFile tmpPath (blobFileName bd name)
