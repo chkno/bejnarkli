@@ -2,6 +2,7 @@
 
 module Bejnarkli
   ( abort
+  , blobData
   , blobName
   , blobNameLength
   , commit
@@ -61,19 +62,21 @@ teeToTempFile dir template stream =
 data StagedBlobHandle =
   StagedBlobHandle
     { blobData :: IO BL.ByteString
-    , commit :: IO ExtantBlobName
+    , commit :: BS.ByteString -> IO ExtantBlobName
     , abort :: IO ()
     }
 
 class UnverifiedBlobStore a where
-  stageBlob :: a -> BS.ByteString -> BL.ByteString -> IO StagedBlobHandle
+  stageBlob :: a -> BL.ByteString -> IO StagedBlobHandle
   listBlobs :: a -> IO [ExtantBlobName]
   getBlob :: a -> ExtantBlobName -> IO BL.ByteString
 
 writeNamePrefixedBlob ::
      UnverifiedBlobStore ubs => ubs -> BL.ByteString -> IO ExtantBlobName
 writeNamePrefixedBlob ubs stream =
-  uncurry (stageBlob ubs) (strictPrefixSplitAt blobNameLength stream) >>= commit
+  let (name, blob) = strictPrefixSplitAt blobNameLength stream
+   in do sbh <- stageBlob ubs blob
+         commit sbh name
   where
     strictPrefixSplitAt ::
          Integral a => a -> BL.ByteString -> (BS.ByteString, BL.ByteString)
@@ -89,14 +92,15 @@ newUnverifiedBlobMap :: IO BlobMapStore
 newUnverifiedBlobMap = BlobMap <$> newIORef Map.empty
 
 instance UnverifiedBlobStore BlobMapStore where
-  stageBlob (BlobMap rm) name blob =
+  stageBlob (BlobMap rm) blob =
     pure
       StagedBlobHandle
         { blobData = pure blob
         , commit =
-            let ename = ExtantBlob name
-             in do modifyIORef' rm (Map.insert ename blob)
-                   pure ename
+            \name ->
+              let ename = ExtantBlob name
+               in do modifyIORef' rm (Map.insert ename blob)
+                     pure ename
         , abort = pure ()
         }
   listBlobs (BlobMap rm) = Map.keys <$> readIORef rm
@@ -113,14 +117,15 @@ newUnverifiedBlobDir path = do
   pure $ BlobDir path
 
 instance UnverifiedBlobStore BlobDirStore where
-  stageBlob bd name blob = do
+  stageBlob bd blob = do
     (teeWrappedBlob, tmpPath) <- teeToTempFile (d </> "incoming") "new" blob
     pure
       StagedBlobHandle
         { blobData = pure teeWrappedBlob
         , commit =
-            do renameFile tmpPath (blobFileName bd name)
-               pure (ExtantBlob name)
+            \name -> do
+              renameFile tmpPath (blobFileName bd name)
+              pure (ExtantBlob name)
         , abort = removeFile tmpPath
         }
     where
