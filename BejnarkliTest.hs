@@ -12,14 +12,12 @@ import Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import Bejnarkli
   ( UnverifiedBlobStore
-  , blobData
   , blobName
-  , commit
   , getBlob
   , newUnverifiedBlobDir
   , newUnverifiedBlobMap
-  , stageBlob
   , writeNamePrefixedBlob
+  , writeTrustedBlob
   )
 
 password = fromString "test secret"
@@ -28,8 +26,7 @@ prop_BlobStoreWriteRead ::
      UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
 prop_BlobStoreWriteRead ubs b =
   monadicIO $ do
-    staged <- run $ stageBlob ubs b
-    ename <- run $ commit staged (blobName password (blobData staged))
+    ename <- run $ writeTrustedBlob ubs password b
     ret <- run $ getBlob ubs ename
     assert $ ret == b
 

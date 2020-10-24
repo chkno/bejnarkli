@@ -14,6 +14,7 @@ module Bejnarkli
   , stageBlob
   , UnverifiedBlobStore
   , writeNamePrefixedBlob
+  , writeTrustedBlob
   ) where
 
 import Control.Exception (bracket)
@@ -145,6 +146,16 @@ unBlobFileName relpath =
       if BS.length n == blobNameLength
         then Just n
         else Nothing
+
+writeTrustedBlob ::
+     UnverifiedBlobStore bs
+  => bs
+  -> BS.ByteString
+  -> BL.ByteString
+  -> IO ExtantBlobName
+writeTrustedBlob bs password blob = do
+  staged <- stageBlob bs blob
+  commit staged (blobName password (blobData staged))
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
