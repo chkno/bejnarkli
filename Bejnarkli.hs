@@ -5,14 +5,14 @@ module Bejnarkli
   , blobData
   , blobName
   , blobNameLength
+  , BlobStore
   , commit
   , getBlob
   , listBlobs
-  , newUnverifiedBlobDir
-  , newUnverifiedBlobMap
+  , newBlobDir
+  , newBlobMap
   , someFunc
   , stageBlob
-  , UnverifiedBlobStore
   , writeNamePrefixedBlob
   , writeTrustedBlob
   , writeUntrustedBlob
@@ -68,16 +68,16 @@ data StagedBlobHandle =
     , abort :: IO ()
     }
 
-class UnverifiedBlobStore a where
+class BlobStore a where
   stageBlob :: a -> BL.ByteString -> IO StagedBlobHandle
   listBlobs :: a -> IO [ExtantBlobName]
   getBlob :: a -> ExtantBlobName -> IO BL.ByteString
 
 writeNamePrefixedBlob ::
-     UnverifiedBlobStore ubs => ubs -> BL.ByteString -> IO ExtantBlobName
-writeNamePrefixedBlob ubs stream =
+     BlobStore bs => bs -> BL.ByteString -> IO ExtantBlobName
+writeNamePrefixedBlob bs stream =
   let (name, blob) = strictPrefixSplitAt blobNameLength stream
-   in do sbh <- stageBlob ubs blob
+   in do sbh <- stageBlob bs blob
          commit sbh name
   where
     strictPrefixSplitAt ::
@@ -90,10 +90,10 @@ writeNamePrefixedBlob ubs stream =
 newtype BlobMapStore =
   BlobMap (IORef (Map.Map ExtantBlobName BL.ByteString))
 
-newUnverifiedBlobMap :: IO BlobMapStore
-newUnverifiedBlobMap = BlobMap <$> newIORef Map.empty
+newBlobMap :: IO BlobMapStore
+newBlobMap = BlobMap <$> newIORef Map.empty
 
-instance UnverifiedBlobStore BlobMapStore where
+instance BlobStore BlobMapStore where
   stageBlob (BlobMap rm) blob =
     pure
       StagedBlobHandle
@@ -113,12 +113,12 @@ instance UnverifiedBlobStore BlobMapStore where
 newtype BlobDirStore =
   BlobDir FilePath
 
-newUnverifiedBlobDir :: FilePath -> IO BlobDirStore
-newUnverifiedBlobDir path = do
+newBlobDir :: FilePath -> IO BlobDirStore
+newBlobDir path = do
   createDirectoryIfMissing True (path </> "incoming")
   pure $ BlobDir path
 
-instance UnverifiedBlobStore BlobDirStore where
+instance BlobStore BlobDirStore where
   stageBlob bd blob = do
     (teeWrappedBlob, tmpPath) <- teeToTempFile (d </> "incoming") "new" blob
     pure
@@ -149,17 +149,13 @@ unBlobFileName relpath =
         else Nothing
 
 writeTrustedBlob ::
-     UnverifiedBlobStore bs
-  => bs
-  -> BS.ByteString
-  -> BL.ByteString
-  -> IO ExtantBlobName
+     BlobStore bs => bs -> BS.ByteString -> BL.ByteString -> IO ExtantBlobName
 writeTrustedBlob bs password blob = do
   staged <- stageBlob bs blob
   commit staged (blobName password (blobData staged))
 
 writeUntrustedBlob ::
-     UnverifiedBlobStore bs
+     BlobStore bs
   => bs
   -> BS.ByteString
   -> BS.ByteString

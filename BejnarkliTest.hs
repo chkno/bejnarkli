@@ -13,11 +13,11 @@ import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import Bejnarkli
-  ( UnverifiedBlobStore
+  ( BlobStore
   , blobName
   , getBlob
-  , newUnverifiedBlobDir
-  , newUnverifiedBlobMap
+  , newBlobDir
+  , newBlobMap
   , writeNamePrefixedBlob
   , writeTrustedBlob
   , writeUntrustedBlob
@@ -26,44 +26,43 @@ import Bejnarkli
 password = U8S.fromString "test secret"
 
 prop_BlobStoreWriteReadTrusted ::
-     UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
-prop_BlobStoreWriteReadTrusted ubs b =
+     BlobStore bs => bs -> BL.ByteString -> Property
+prop_BlobStoreWriteReadTrusted bs b =
   monadicIO $ do
-    ename <- run $ writeTrustedBlob ubs password b
-    ret <- run $ getBlob ubs ename
+    ename <- run $ writeTrustedBlob bs password b
+    ret <- run $ getBlob bs ename
     assert $ ret == b
 
 prop_BlobStoreWriteReadCorrectHash ::
-     UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
-prop_BlobStoreWriteReadCorrectHash ubs b =
+     BlobStore bs => bs -> BL.ByteString -> Property
+prop_BlobStoreWriteReadCorrectHash bs b =
   monadicIO $ do
-    ename <- run $ writeUntrustedBlob ubs password (blobName password b) b
-    ret <- run $ getBlob ubs (fromJust ename)
+    ename <- run $ writeUntrustedBlob bs password (blobName password b) b
+    ret <- run $ getBlob bs (fromJust ename)
     assert $ ret == b
 
-prop_BlobStoreWriteWrongHash ::
-     UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
-prop_BlobStoreWriteWrongHash ubs b =
+prop_BlobStoreWriteWrongHash :: BlobStore bs => bs -> BL.ByteString -> Property
+prop_BlobStoreWriteWrongHash bs b =
   monadicIO $
   let wrongHash = blobName password (BL.append b (U8L.fromString "different"))
-   in do ename <- run $ writeUntrustedBlob ubs password wrongHash b
+   in do ename <- run $ writeUntrustedBlob bs password wrongHash b
          assert $ isNothing ename
 
 prop_BlobStoreWriteWrongPassword ::
-     UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
-prop_BlobStoreWriteWrongPassword ubs b =
+     BlobStore bs => bs -> BL.ByteString -> Property
+prop_BlobStoreWriteWrongPassword bs b =
   monadicIO $
   let wrongHash = blobName (U8S.fromString "wrong password") b
-   in do ename <- run $ writeUntrustedBlob ubs password wrongHash b
+   in do ename <- run $ writeUntrustedBlob bs password wrongHash b
          assert $ isNothing ename
 
 prop_BlobStoreWritePrefixedRead ::
-     UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
-prop_BlobStoreWritePrefixedRead ubs b =
+     BlobStore bs => bs -> BL.ByteString -> Property
+prop_BlobStoreWritePrefixedRead bs b =
   let stream = BL.append (BL.fromStrict $ blobName password b) b
    in monadicIO $ do
-        ename <- run $ writeNamePrefixedBlob ubs stream
-        ret <- run $ getBlob ubs ename
+        ename <- run $ writeNamePrefixedBlob bs stream
+        ret <- run $ getBlob bs ename
         assert $ ret == b
 
 tests :: IO [Result]
@@ -71,8 +70,8 @@ tests =
   withSystemTempDirectory
     "bej"
     (\tmpdir -> do
-       m <- newUnverifiedBlobMap
-       d <- newUnverifiedBlobDir tmpdir
+       m <- newBlobMap
+       d <- newBlobDir tmpdir
        mapM
          quickCheckResult
          [ prop_BlobStoreWriteReadTrusted m
