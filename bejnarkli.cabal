@@ -24,7 +24,6 @@ common shared-properties
     directory,
     filepath,
     memory,
-    safeio,
     SHA,
     temporary,
     utf8-string

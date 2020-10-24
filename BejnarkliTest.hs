@@ -27,7 +27,8 @@ prop_BlobStoreWriteRead ::
      UnverifiedBlobStore ubs => ubs -> BL.ByteString -> Property
 prop_BlobStoreWriteRead ubs b =
   monadicIO $ do
-    ename <- run $ commit $ stageBlob ubs (blobName password b) b
+    staged <- run $ stageBlob ubs (blobName password b) b
+    ename <- run $ commit staged
     ret <- run $ getBlob ubs ename
     assert $ ret == b
 
