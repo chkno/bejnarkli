@@ -17,7 +17,7 @@ extra-source-files:  CHANGELOG.md
 
 common shared-properties
   build-depends:
-    base >=4.12 && <4.13,
+    base,
     base64-bytestring,
     bytestring,
     containers,
@@ -34,6 +34,8 @@ common shared-properties
     -Weverything
     -Wno-implicit-prelude
     -Wno-safe
+  if impl(ghc >= 8.8)
+    ghc-options: -Wno-missing-deriving-strategies
 
 library
   import: shared-properties

@@ -30,7 +30,9 @@ in_git_index_in_tmpdir() {
 }
 
 verify() {
-  nix --print-build-logs build --no-link --arg lint true
+  nix-build --no-link --arg lint true
+  nix --experimental-features 'nix-command flakes' flake check
+  nix --experimental-features 'nix-command flakes' build --no-link --arg lint true
 }
 
 in_git_index_in_tmpdir verify
