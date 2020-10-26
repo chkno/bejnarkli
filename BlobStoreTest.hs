@@ -90,22 +90,21 @@ tests =
     (\tmpdir -> do
        m <- newBlobMap
        d <- newBlobDir tmpdir
-       mapM
-         quickCheckResult
-         [ prop_BlobStoreWriteReadTrusted m
-         , prop_BlobStoreWriteReadCorrectHash m
-         , prop_BlobStoreWriteWrongHash m
-         , prop_BlobStoreWriteWrongPassword m
-         , prop_BlobStoreWritePrefixedRead m
-         , prop_BlobStoreWritePrefixedWrongHash m
-         , prop_BlobStoreWritePrefixedWrongPassword m
-         , prop_BlobStoreWriteReadTrusted d
-         , prop_BlobStoreWriteReadCorrectHash d
-         , prop_BlobStoreWriteWrongHash d
-         , prop_BlobStoreWriteWrongPassword d
-         , prop_BlobStoreWritePrefixedRead d
-         , prop_BlobStoreWritePrefixedWrongHash d
-         , prop_BlobStoreWritePrefixedWrongPassword d
+       sequence
+         [ quickCheckResult $ prop_BlobStoreWriteReadTrusted m
+         , quickCheckResult $ prop_BlobStoreWriteReadCorrectHash m
+         , quickCheckResult $ prop_BlobStoreWriteWrongHash m
+         , quickCheckResult $ prop_BlobStoreWriteWrongPassword m
+         , quickCheckResult $ prop_BlobStoreWritePrefixedRead m
+         , quickCheckResult $ prop_BlobStoreWritePrefixedWrongHash m
+         , quickCheckResult $ prop_BlobStoreWritePrefixedWrongPassword m
+         , quickCheckResult $ prop_BlobStoreWriteReadTrusted d
+         , quickCheckResult $ prop_BlobStoreWriteReadCorrectHash d
+         , quickCheckResult $ prop_BlobStoreWriteWrongHash d
+         , quickCheckResult $ prop_BlobStoreWriteWrongPassword d
+         , quickCheckResult $ prop_BlobStoreWritePrefixedRead d
+         , quickCheckResult $ prop_BlobStoreWritePrefixedWrongHash d
+         , quickCheckResult $ prop_BlobStoreWritePrefixedWrongPassword d
          ])
 
 main :: IO ()
