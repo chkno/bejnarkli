@@ -2,21 +2,19 @@ module Main
   ( main
   ) where
 
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Lazy.UTF8 as U8L
-import qualified Data.ByteString.UTF8 as U8S
 import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
-import Test.QuickCheck (Property, Result, isSuccess, quickCheckResult)
+import Test.QuickCheck (Property, Result, (==>), isSuccess, quickCheckResult)
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import Bejnarkli (bejnarkliServer)
 import BlobStore (blobName, getBlob, listBlobs, newBlobMap)
 
-password = U8S.fromString "test secret"
-
-prop_ServerWritesBlob :: BL.ByteString -> Property
-prop_ServerWritesBlob b =
+prop_ServerWritesBlob :: BS.ByteString -> BL.ByteString -> Property
+prop_ServerWritesBlob password b =
   let name = blobName password b
       stream = BL.append (BL.fromStrict name) b
    in monadicIO $ do
@@ -27,8 +25,25 @@ prop_ServerWritesBlob b =
         storedBlob <- run $ getBlob bs $ head storedBlobs
         assert $ storedBlob == b
 
+prop_ServerRejectsBadPassword ::
+     BS.ByteString -> BS.ByteString -> BL.ByteString -> Property
+prop_ServerRejectsBadPassword pass1 pass2 b =
+  (pass1 /= pass2) ==>
+  let name = blobName pass1 b
+      stream = BL.append (BL.fromStrict name) b
+   in monadicIO $ do
+        bs <- run newBlobMap
+        result <- run $ bejnarkliServer bs pass2 stream
+        assert $ result == U8L.fromString "n"
+        storedBlobs <- run $ listBlobs bs
+        assert $ null storedBlobs
+
 tests :: IO [Result]
-tests = mapM quickCheckResult [prop_ServerWritesBlob]
+tests =
+  sequence
+    [ quickCheckResult prop_ServerWritesBlob
+    , quickCheckResult prop_ServerRejectsBadPassword
+    ]
 
 main :: IO ()
 main = do
