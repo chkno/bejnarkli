@@ -40,21 +40,25 @@ common shared-properties
 library
   import: shared-properties
   exposed-modules:     Bejnarkli
-
-library blobstore
-  import: shared-properties
-  exposed-modules:     BlobStore
+  other-modules:       BlobStore
 
 executable bejnarkli
   import: shared-properties
   main-is:             Main.hs
-  other-modules:       Bejnarkli
+  other-modules:
+    Bejnarkli,
+    BlobStore
 
 test-suite bejnarkli-test
   import: shared-properties
   type:                exitcode-stdio-1.0
-  other-modules:       Bejnarkli
+  other-modules:
+    Bejnarkli,
+    BlobStore
   main-is:             BejnarkliTest.hs
+  build-depends:
+    QuickCheck,
+    quickcheck-instances
 
 test-suite blobstore-test
   import: shared-properties
