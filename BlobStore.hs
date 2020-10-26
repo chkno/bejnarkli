@@ -3,6 +3,8 @@
 module BlobStore
   ( abort
   , blobData
+  , BlobDirStore
+  , BlobMapStore
   , blobName
   , blobNameLength
   , BlobStore

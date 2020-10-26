@@ -12,7 +12,9 @@ import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import BlobStore
-  ( BlobStore
+  ( BlobDirStore
+  , BlobMapStore
+  , BlobStore
   , blobName
   , getBlob
   , newBlobDir
@@ -100,6 +102,24 @@ prop_BlobStoreWritePrefixedWrongPassword bs pass1 pass2 b =
    in do ename <- run $ writeNamePrefixedBlob bs pass1 stream
          assert $ isNothing ename
 
+class BlobStore bs =>
+      TestedBlobStore bs
+  where
+  testBlobStore :: bs -> [IO Result]
+  testBlobStore bs =
+    [ quickCheckResult $ prop_BlobStoreWriteReadTrusted bs
+    , quickCheckResult $ prop_BlobStoreWriteReadCorrectHash bs
+    , quickCheckResult $ prop_BlobStoreWriteWrongHash bs
+    , quickCheckResult $ prop_BlobStoreWriteWrongPassword bs
+    , quickCheckResult $ prop_BlobStoreWritePrefixedRead bs
+    , quickCheckResult $ prop_BlobStoreWritePrefixedWrongHash bs
+    , quickCheckResult $ prop_BlobStoreWritePrefixedWrongPassword bs
+    ]
+
+instance TestedBlobStore BlobMapStore
+
+instance TestedBlobStore BlobDirStore
+
 tests :: IO [Result]
 tests =
   withSystemTempDirectory
@@ -107,22 +127,7 @@ tests =
     (\tmpdir -> do
        m <- newBlobMap
        d <- newBlobDir tmpdir
-       sequence
-         [ quickCheckResult $ prop_BlobStoreWriteReadTrusted m
-         , quickCheckResult $ prop_BlobStoreWriteReadCorrectHash m
-         , quickCheckResult $ prop_BlobStoreWriteWrongHash m
-         , quickCheckResult $ prop_BlobStoreWriteWrongPassword m
-         , quickCheckResult $ prop_BlobStoreWritePrefixedRead m
-         , quickCheckResult $ prop_BlobStoreWritePrefixedWrongHash m
-         , quickCheckResult $ prop_BlobStoreWritePrefixedWrongPassword m
-         , quickCheckResult $ prop_BlobStoreWriteReadTrusted d
-         , quickCheckResult $ prop_BlobStoreWriteReadCorrectHash d
-         , quickCheckResult $ prop_BlobStoreWriteWrongHash d
-         , quickCheckResult $ prop_BlobStoreWriteWrongPassword d
-         , quickCheckResult $ prop_BlobStoreWritePrefixedRead d
-         , quickCheckResult $ prop_BlobStoreWritePrefixedWrongHash d
-         , quickCheckResult $ prop_BlobStoreWritePrefixedWrongPassword d
-         ])
+       sequence $ testBlobStore m ++ testBlobStore d)
 
 main :: IO ()
 main = do
