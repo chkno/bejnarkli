@@ -26,7 +26,7 @@ import qualified Data.ByteString.Base64.URL as Base64
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 (fromString, toString)
 import Data.Digest.Pure.SHA (bytestringDigest, hmacSha256)
-import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
+import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (mapMaybe)
 import System.Directory
@@ -128,7 +128,7 @@ instance BlobStore BlobMapStore where
         , commit =
             \name ->
               let ename = ExtantBlob name
-               in do modifyIORef' rm (Map.insert ename blob)
+               in do atomicModifyIORef' rm ((, ()) . Map.insert ename blob)
                      pure ename
         , abort = pure ()
         }
