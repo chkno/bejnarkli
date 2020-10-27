@@ -53,6 +53,7 @@ executable bejnarkli
     Bejnarkli,
     BlobStore,
     TCPServer
+  build-depends:       optparse-applicative
 
 test-suite bejnarkli-test
   import: shared-properties

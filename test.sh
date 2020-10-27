@@ -5,7 +5,7 @@ set -euo pipefail
 bejnarkli=${1:-$PWD/dist-newstyle/build/*/*/bejnarkli-*/x/bejnarkli/build/bejnarkli/bejnarkli}
 
 port=8934
-outdir=teh-blobs
+outdir=blobs
 password=secret
 payload="Test content"
 max_attempts=10
@@ -36,7 +36,7 @@ trap cleanup EXIT
 tmpdir=$(mktemp -d)
 cd "$tmpdir"
 
-$bejnarkli &
+$bejnarkli --password "$password" &
 bejnarkli_pid=$!
 
 attempts=0
