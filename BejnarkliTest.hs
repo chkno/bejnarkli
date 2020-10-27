@@ -15,7 +15,7 @@ import BlobStore (Password, blobName, getBlob, listBlobs, newBlobMap)
 prop_ServerWritesBlob :: Password -> BL.ByteString -> Property
 prop_ServerWritesBlob password b =
   let name = blobName password b
-      stream = BL.append (BL.fromStrict name) b
+      stream = BL.concat [BL.pack [66], BL.fromStrict name, b]
    in monadicIO $ do
         bs <- run newBlobMap
         result <- run $ bejnarkliServer bs password stream

@@ -11,6 +11,7 @@ max_attempts=10
 delay_between_attempts=.2
 
 message() {
+  echo -n B
   printf '%s' "$payload" | openssl dgst -sha256 -binary -hmac "$password"
   printf '%s' "$payload"
 }
