@@ -3,16 +3,15 @@ module Bejnarkli
   , someFunc
   ) where
 
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Lazy.UTF8 (fromString)
 
-import BlobStore (BlobStore, writeNamePrefixedBlob)
+import BlobStore (BlobStore, Password, writeNamePrefixedBlob)
 
 bejnarkliServer ::
      BlobStore blobstore
   => blobstore
-  -> BS.ByteString
+  -> Password
   -> BL.ByteString
   -> IO BL.ByteString
 bejnarkliServer bs password stream = do

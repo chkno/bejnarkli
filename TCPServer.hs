@@ -16,7 +16,7 @@ import Network.Simple.TCP
   )
 
 import Bejnarkli (bejnarkliServer)
-import BlobStore (BlobStore)
+import BlobStore (BlobStore, Password)
 
 drainSocket :: Socket -> IO BL.ByteString
 drainSocket socket = BL.fromChunks <$> drain
@@ -27,7 +27,7 @@ drainSocket socket = BL.fromChunks <$> drain
         Just chunk -> (chunk :) <$> drain
         Nothing -> pure []
 
-tCPServer :: BlobStore bs => String -> bs -> BS.ByteString -> IO ()
+tCPServer :: BlobStore bs => String -> bs -> Password -> IO ()
 tCPServer port bs password =
   serve
     HostAny

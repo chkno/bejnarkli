@@ -2,7 +2,6 @@ module Main
   ( main
   ) where
 
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Lazy.UTF8 as U8L
 import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
@@ -11,9 +10,9 @@ import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import Bejnarkli (bejnarkliServer)
-import BlobStore (blobName, getBlob, listBlobs, newBlobMap)
+import BlobStore (Password, blobName, getBlob, listBlobs, newBlobMap)
 
-prop_ServerWritesBlob :: BS.ByteString -> BL.ByteString -> Property
+prop_ServerWritesBlob :: Password -> BL.ByteString -> Property
 prop_ServerWritesBlob password b =
   let name = blobName password b
       stream = BL.append (BL.fromStrict name) b
@@ -26,7 +25,7 @@ prop_ServerWritesBlob password b =
         assert $ storedBlob == b
 
 prop_ServerRejectsBadPassword ::
-     BS.ByteString -> BS.ByteString -> BL.ByteString -> Property
+     Password -> Password -> BL.ByteString -> Property
 prop_ServerRejectsBadPassword pass1 pass2 b =
   (pass1 /= pass2) ==>
   let name = blobName pass1 b

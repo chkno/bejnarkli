@@ -13,6 +13,7 @@ module BlobStore
   , listBlobs
   , newBlobDir
   , newBlobMap
+  , Password(Pass)
   , stageBlob
   , writeNamePrefixedBlob
   , writeTrustedBlob
@@ -37,16 +38,25 @@ import System.Directory
 import System.FilePath ((</>))
 import System.IO (Handle, hClose)
 import System.IO.Temp (openBinaryTempFile)
+import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
+import Test.QuickCheck.Instances.ByteString ()
 
 blobNameLength :: Int
 blobNameLength = 32
+
+newtype Password =
+  Pass BS.ByteString
+  deriving (Eq, Show)
+
+instance Arbitrary Password where
+  arbitrary = Pass <$> arbitrary
 
 newtype ExtantBlobName =
   ExtantBlob BS.ByteString
   deriving (Eq, Ord)
 
-blobName :: BS.ByteString -> BL.ByteString -> BS.ByteString
-blobName password blob =
+blobName :: Password -> BL.ByteString -> BS.ByteString
+blobName (Pass password) blob =
   BL.toStrict $ bytestringDigest $ hmacSha256 (BL.fromStrict password) blob
 
 -- |Lazily write a Lazy ByteString
@@ -77,7 +87,7 @@ class BlobStore a where
 writeNamePrefixedBlob ::
      BlobStore bs
   => bs
-  -> BS.ByteString
+  -> Password
   -> BL.ByteString
   -> IO (Maybe ExtantBlobName)
 writeNamePrefixedBlob bs password stream =
@@ -153,7 +163,7 @@ unBlobFileName relpath =
         else Nothing
 
 writeTrustedBlob ::
-     BlobStore bs => bs -> BS.ByteString -> BL.ByteString -> IO ExtantBlobName
+     BlobStore bs => bs -> Password -> BL.ByteString -> IO ExtantBlobName
 writeTrustedBlob bs password blob = do
   staged <- stageBlob bs blob
   commit staged (blobName password (blobData staged))
@@ -161,7 +171,7 @@ writeTrustedBlob bs password blob = do
 writeUntrustedBlob ::
      BlobStore bs
   => bs
-  -> BS.ByteString
+  -> Password
   -> BS.ByteString
   -> BL.ByteString
   -> IO (Maybe ExtantBlobName)

@@ -25,6 +25,8 @@ common shared-properties
     filepath,
     memory,
     network-simple,
+    QuickCheck,
+    quickcheck-instances,
     SHA,
     temporary,
     utf8-string
@@ -59,15 +61,9 @@ test-suite bejnarkli-test
     Bejnarkli,
     BlobStore
   main-is:             BejnarkliTest.hs
-  build-depends:
-    QuickCheck,
-    quickcheck-instances
 
 test-suite blobstore-test
   import: shared-properties
   type:                exitcode-stdio-1.0
   other-modules:       BlobStore
   main-is:             BlobStoreTest.hs
-  build-depends:
-    QuickCheck,
-    quickcheck-instances

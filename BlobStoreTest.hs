@@ -2,7 +2,6 @@ module Main
   ( main
   ) where
 
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Data.Maybe (fromJust, isNothing)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
@@ -15,6 +14,7 @@ import BlobStore
   ( BlobDirStore
   , BlobMapStore
   , BlobStore
+  , Password
   , blobName
   , getBlob
   , newBlobDir
@@ -25,7 +25,7 @@ import BlobStore
   )
 
 prop_BlobStoreWriteReadTrusted ::
-     BlobStore bs => bs -> BS.ByteString -> BL.ByteString -> Property
+     BlobStore bs => bs -> Password -> BL.ByteString -> Property
 prop_BlobStoreWriteReadTrusted bs password b =
   monadicIO $ do
     ename <- run $ writeTrustedBlob bs password b
@@ -33,7 +33,7 @@ prop_BlobStoreWriteReadTrusted bs password b =
     assert $ ret == b
 
 prop_BlobStoreWriteReadCorrectHash ::
-     BlobStore bs => bs -> BS.ByteString -> BL.ByteString -> Property
+     BlobStore bs => bs -> Password -> BL.ByteString -> Property
 prop_BlobStoreWriteReadCorrectHash bs password b =
   monadicIO $ do
     ename <- run $ writeUntrustedBlob bs password (blobName password b) b
@@ -43,7 +43,7 @@ prop_BlobStoreWriteReadCorrectHash bs password b =
 prop_BlobStoreWriteWrongHash ::
      BlobStore bs
   => bs
-  -> BS.ByteString
+  -> Password
   -> BL.ByteString
   -> BL.ByteString
   -> Property
@@ -54,12 +54,7 @@ prop_BlobStoreWriteWrongHash bs password blob1 blob2 =
     assert $ isNothing ename
 
 prop_BlobStoreWriteWrongPassword ::
-     BlobStore bs
-  => bs
-  -> BS.ByteString
-  -> BS.ByteString
-  -> BL.ByteString
-  -> Property
+     BlobStore bs => bs -> Password -> Password -> BL.ByteString -> Property
 prop_BlobStoreWriteWrongPassword bs pass1 pass2 b =
   (pass1 /= pass2) ==> monadicIO $
   let wrongHash = blobName pass1 b
@@ -67,7 +62,7 @@ prop_BlobStoreWriteWrongPassword bs pass1 pass2 b =
          assert $ isNothing ename
 
 prop_BlobStoreWritePrefixedRead ::
-     BlobStore bs => bs -> BS.ByteString -> BL.ByteString -> Property
+     BlobStore bs => bs -> Password -> BL.ByteString -> Property
 prop_BlobStoreWritePrefixedRead bs password b =
   let stream = BL.append (BL.fromStrict $ blobName password b) b
    in monadicIO $ do
@@ -78,7 +73,7 @@ prop_BlobStoreWritePrefixedRead bs password b =
 prop_BlobStoreWritePrefixedWrongHash ::
      BlobStore bs
   => bs
-  -> BS.ByteString
+  -> Password
   -> BL.ByteString
   -> BL.ByteString
   -> Property
@@ -89,12 +84,7 @@ prop_BlobStoreWritePrefixedWrongHash bs password blob1 blob2 =
          assert $ isNothing ename
 
 prop_BlobStoreWritePrefixedWrongPassword ::
-     BlobStore bs
-  => bs
-  -> BS.ByteString
-  -> BS.ByteString
-  -> BL.ByteString
-  -> Property
+     BlobStore bs => bs -> Password -> Password -> BL.ByteString -> Property
 prop_BlobStoreWritePrefixedWrongPassword bs pass1 pass2 b =
   (pass1 /= pass2) ==> monadicIO $
   let wrongHash = blobName pass2 b
