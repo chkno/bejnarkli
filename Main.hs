@@ -2,9 +2,12 @@ module Main
   ( main
   ) where
 
-import qualified Bejnarkli (someFunc)
+import BlobStore (newBlobDir)
+import Data.ByteString.UTF8 (fromString)
+
+import TCPServer (tCPServer)
 
 main :: IO ()
 main = do
-  putStrLn "Hello, Haskell!"
-  Bejnarkli.someFunc
+  bs <- newBlobDir "teh-blobs"
+  tCPServer "8934" bs (fromString "secret")
