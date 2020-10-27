@@ -5,7 +5,6 @@ set -euo pipefail
 bejnarkli=${1:-$PWD/dist-newstyle/build/*/*/bejnarkli-*/x/bejnarkli/build/bejnarkli/bejnarkli}
 
 port=8934
-outdir=blobs
 password=secret
 payload="Test content"
 max_attempts=10
@@ -34,9 +33,8 @@ cleanup() {
 trap cleanup EXIT
 
 tmpdir=$(mktemp -d)
-cd "$tmpdir"
 
-$bejnarkli --password "$password" &
+$bejnarkli --blobdir "$tmpdir" --password "$password" &
 bejnarkli_pid=$!
 
 attempts=0
@@ -47,7 +45,7 @@ until [[ "$(message | send)" == y ]];do
   sleep "$delay_between_attempts"
 done
 
-captured_blob_data=$(find "$outdir" -name incoming -prune -o -type f -exec cat {} +)
+captured_blob_data=$(find "$tmpdir" -name incoming -prune -o -type f -exec cat {} +)
 
 [[ "$captured_blob_data" == "$payload" ]]
 
