@@ -46,7 +46,20 @@ blobNameLength = 32
 
 newtype Password =
   Pass BS.ByteString
-  deriving (Eq, Show)
+  deriving (Show)
+
+-- HMAC specifies that keys less than the key length are null-padded up
+-- to the key length (longer keys are hashed).  This means that keys that
+-- are both less than the key length and differ only by trailing \NULs are
+-- equivalent HMAC keys.  We must surface this minor quirk here so that when
+-- we ask quickcheck for two different passwords, they actually differ.
+instance Eq Password where
+  (Pass a) == (Pass b)
+    | BS.length a <= blobNameLength && BS.length b <= blobNameLength =
+      nullPad a == nullPad b
+    | otherwise = a == b
+    where
+      nullPad s = BS.append s (BS.replicate (blobNameLength - BS.length s) 0)
 
 instance Arbitrary Password where
   arbitrary = Pass <$> arbitrary
