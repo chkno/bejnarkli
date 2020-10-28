@@ -68,3 +68,9 @@ test-suite blobstore-test
   type:                exitcode-stdio-1.0
   other-modules:       BlobStore
   main-is:             BlobStoreTest.hs
+
+test-suite queue-test
+  import: shared-properties
+  type:                exitcode-stdio-1.0
+  other-modules:       Queue
+  main-is:             QueueTest.hs
