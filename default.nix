@@ -1,8 +1,8 @@
 { pkgs ? import <nixpkgs> { }, lint ? false, }:
 pkgs.haskellPackages.callPackage ({ base64-bytestring, hindent, hlint, lib
   , memory, mkDerivation, network-simple, nixfmt, openssl, optparse-applicative
-  , QuickCheck, quickcheck-instances, SHA, socat, stdenv, temporary, utf8-string
-  , }:
+  , QuickCheck, quickcheck-instances, random, SHA, socat, stdenv, temporary
+  , utf8-string, }:
   mkDerivation {
     pname = "bejnarkli";
     version = "0.0.1.0";
@@ -13,6 +13,7 @@ pkgs.haskellPackages.callPackage ({ base64-bytestring, hindent, hlint, lib
       network-simple
       optparse-applicative
       SHA
+      random
       temporary
       utf8-string
     ];

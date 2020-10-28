@@ -27,6 +27,7 @@ common shared-properties
     network-simple,
     QuickCheck,
     quickcheck-instances,
+    random,
     SHA,
     temporary,
     utf8-string

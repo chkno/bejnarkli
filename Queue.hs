@@ -6,11 +6,13 @@ module Queue
 
 import Control.Concurrent (ThreadId, forkIO, threadDelay)
 import Control.Concurrent.Chan (Chan, getChanContents, writeChan)
+import System.Random (getStdRandom, randomR)
 
 -- |Apply f to items written to the channel.  f returns a bool indicating success.
 -- When f is unsuccessful:
 --   * The item is re-inserted into the channel to be attempted again later
---   * Subsequent calls of f are delayed by exponential back-off until successful.
+--   * Subsequent calls of f are delayed by exponential back-off with jitter
+--     until successful again.
 mapChanWithBackoff ::
      forall a.
      Float
@@ -29,7 +31,8 @@ mapChanWithBackoff increment minDelay maxDelay f chan =
        in if success
             then process 0.0 next
             else do
-              threadDelay $ round $ 1000000 * backoff
+              delay <- getStdRandom (randomR (0, 2 * backoff))
+              threadDelay $ round $ 100000 * delay
               writeChan chan item
               process backoff next
     process _ [] = error "getChanContents unexpectedly ended"
