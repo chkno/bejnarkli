@@ -2,6 +2,8 @@ module ReplicatingBlobStore
   ( ReplicatingBlobStore(..)
   ) where
 
+import qualified Data.ByteString.Lazy as BL
+
 import BlobStore
   ( BlobStore
   , StagedBlobHandle(StagedBlobHandle, abort, blobData, commit)
@@ -9,10 +11,9 @@ import BlobStore
   , listBlobs
   , stageBlob
   )
-import Network.Simple.TCP (HostName)
 
 data ReplicatingBlobStore bs =
-  ReplicatingBlobStore [HostName] bs
+  ReplicatingBlobStore [BL.ByteString -> IO BL.ByteString] bs
 
 instance BlobStore bs => BlobStore (ReplicatingBlobStore bs) where
   listBlobs (ReplicatingBlobStore _ bs) = listBlobs bs
