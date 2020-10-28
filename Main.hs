@@ -14,6 +14,7 @@ import Options.Applicative
   , helper
   , info
   , long
+  , many
   , progDesc
   , short
   , showDefault
@@ -21,13 +22,16 @@ import Options.Applicative
   , value
   )
 import Options.Applicative.Types (ParserInfo)
+import ReplicatingBlobStore (ReplicatingBlobStore(ReplicatingBlobStore))
 
+import TCPClient (tCPClient)
 import TCPServer (tCPServer)
 
 data Args =
   Args
     { blobdir :: String
     , password :: String
+    , peers :: [String]
     , port :: String
     }
 
@@ -39,6 +43,8 @@ parser =
      short 'd' <>
      value "blobs" <> showDefault <> help "Where to store the blobs") <*>
   strOption (long "password" <> short 'p' <> help "Transfer password") <*>
+  many
+    (strOption (long "peers" <> help "Hostnames of other servers to forward to")) <*>
   strOption
     (long "port" <>
      value "8934" <> showDefault <> help "TCP port on which to listen")
@@ -54,5 +60,7 @@ parserInfo =
 main :: IO ()
 main = do
   args <- execParser parserInfo
-  bs <- newBlobDir (blobdir args)
-  tCPServer (port args) bs (Pass (fromString (password args)))
+  localBS <- newBlobDir (blobdir args)
+  let replicatingBS =
+        ReplicatingBlobStore (map (tCPClient (port args)) (peers args)) localBS
+   in tCPServer (port args) replicatingBS (Pass (fromString (password args)))

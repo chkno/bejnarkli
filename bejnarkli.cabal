@@ -53,6 +53,8 @@ executable bejnarkli
   other-modules:
     Bejnarkli,
     BlobStore,
+    ReplicatingBlobStore,
+    TCPClient,
     TCPServer
   build-depends:       optparse-applicative
 
