@@ -15,7 +15,6 @@ import Options.Applicative
   , info
   , long
   , many
-  , progDesc
   , short
   , showDefault
   , strOption
@@ -53,9 +52,7 @@ parserInfo :: ParserInfo Args
 parserInfo =
   info
     (parser <**> helper)
-    (fullDesc <>
-     progDesc "Transfer blobs around" <>
-     header "bejnarkli - store authenticated blobs received from the network")
+    (fullDesc <> header "bejnarkli - Transfer blobs around")
 
 main :: IO ()
 main = do
