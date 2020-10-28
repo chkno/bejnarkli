@@ -1,4 +1,3 @@
-* Forward blobs to other servers
 * Only forward once
 * Send asynchronously
 * Send with specified durability

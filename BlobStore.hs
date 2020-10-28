@@ -6,6 +6,7 @@ module BlobStore
   , blobName
   , blobNameLength
   , BlobStore
+  , ExtantBlobName(..)
   , getBlob
   , listBlobs
   , newBlobDir
