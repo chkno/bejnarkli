@@ -1,19 +1,17 @@
 {-# LANGUAGE TupleSections #-}
 
 module BlobStore
-  ( abort
-  , blobData
-  , BlobDirStore
+  ( BlobDirStore
   , BlobMapStore
   , blobName
   , blobNameLength
   , BlobStore
-  , commit
   , getBlob
   , listBlobs
   , newBlobDir
   , newBlobMap
   , Password(Pass)
+  , StagedBlobHandle(..)
   , stageBlob
   , writeNamePrefixedBlob
   , writeTrustedBlob

@@ -23,6 +23,7 @@ import BlobStore
   , writeTrustedBlob
   , writeUntrustedBlob
   )
+import ReplicatingBlobStore (ReplicatingBlobStore(ReplicatingBlobStore))
 
 prop_BlobStoreWriteReadTrusted ::
      BlobStore bs => bs -> Password -> BL.ByteString -> Property
@@ -110,6 +111,8 @@ instance TestedBlobStore BlobMapStore
 
 instance TestedBlobStore BlobDirStore
 
+instance BlobStore bs => TestedBlobStore (ReplicatingBlobStore bs)
+
 tests :: IO [Result]
 tests =
   withSystemTempDirectory
@@ -117,7 +120,8 @@ tests =
     (\tmpdir -> do
        m <- newBlobMap
        d <- newBlobDir tmpdir
-       sequence $ testBlobStore m ++ testBlobStore d)
+       r <- ReplicatingBlobStore [] <$> newBlobMap
+       sequence $ testBlobStore m ++ testBlobStore d ++ testBlobStore r)
 
 main :: IO ()
 main = do

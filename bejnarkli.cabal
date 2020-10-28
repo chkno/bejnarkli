@@ -67,7 +67,9 @@ test-suite bejnarkli-test
 test-suite blobstore-test
   import: shared-properties
   type:                exitcode-stdio-1.0
-  other-modules:       BlobStore
+  other-modules:
+    BlobStore
+    ReplicatingBlobStore
   main-is:             BlobStoreTest.hs
 
 test-suite queue-test
