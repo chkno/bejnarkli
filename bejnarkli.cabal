@@ -45,7 +45,10 @@ common shared-properties
 library
   import: shared-properties
   exposed-modules:     Bejnarkli
-  other-modules:       BlobStore
+  other-modules:
+    BlobStore
+    Queue
+    TCPClient
 
 executable bejnarkli
   import: shared-properties
@@ -53,6 +56,7 @@ executable bejnarkli
   other-modules:
     Bejnarkli,
     BlobStore,
+    Queue,
     ReplicatingBlobStore,
     TCPClient,
     TCPServer
@@ -63,7 +67,9 @@ test-suite bejnarkli-test
   type:                exitcode-stdio-1.0
   other-modules:
     Bejnarkli,
-    BlobStore
+    BlobStore,
+    Queue,
+    TCPClient
   main-is:             BejnarkliTest.hs
 
 test-suite blobstore-test
@@ -72,7 +78,9 @@ test-suite blobstore-test
   other-modules:
     Bejnarkli
     BlobStore
+    Queue
     ReplicatingBlobStore
+    TCPClient
   main-is:             BlobStoreTest.hs
 
 test-suite queue-test
@@ -87,5 +95,7 @@ test-suite replicatedblobstore-test
   other-modules:
     Bejnarkli
     BlobStore
+    Queue
     ReplicatingBlobStore
+    TCPClient
   main-is:             ReplicatingBlobStoreTest.hs

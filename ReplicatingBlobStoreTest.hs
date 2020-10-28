@@ -3,6 +3,7 @@ module Main
   ) where
 
 import qualified Data.ByteString.Lazy as BL
+import Data.ByteString.Lazy.UTF8 (fromString)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
 import Test.QuickCheck (Property, Result, isSuccess, quickCheckResult)
 import Test.QuickCheck.Instances.ByteString ()
@@ -17,7 +18,11 @@ prop_Replicates password b =
   monadicIO $ do
     localBS <- run newBlobMap
     remoteBS <- run newBlobMap
-    let remoteServer = bejnarkliServer remoteBS password
+    let remoteServer blob = do
+          response <- bejnarkliServer remoteBS password blob
+          if response == fromString "y"
+            then pure ()
+            else error "Unexpected transfer failure"
         replicatedBS = ReplicatingBlobStore [remoteServer] localBS
      in do ename <- run $ writeTrustedBlob replicatedBS password b
            locallyStored <- run $ getBlob localBS ename

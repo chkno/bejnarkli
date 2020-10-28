@@ -15,11 +15,7 @@ import BlobStore
   )
 
 sendBlobFromStore ::
-     BlobStore bs
-  => bs
-  -> ExtantBlobName
-  -> (BL.ByteString -> IO BL.ByteString)
-  -> IO ()
+     BlobStore bs => bs -> ExtantBlobName -> (BL.ByteString -> IO ()) -> IO ()
 sendBlobFromStore bs name remoteServer = do
   blob <- getBlob bs name
   _ <-
@@ -30,7 +26,7 @@ sendBlobFromStore bs name remoteServer = do
     (ExtantBlob rawname) = name
 
 data ReplicatingBlobStore bs =
-  ReplicatingBlobStore [BL.ByteString -> IO BL.ByteString] bs
+  ReplicatingBlobStore [BL.ByteString -> IO ()] bs
 
 instance BlobStore bs => BlobStore (ReplicatingBlobStore bs) where
   listBlobs (ReplicatingBlobStore _ bs) = listBlobs bs

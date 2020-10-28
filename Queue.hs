@@ -22,14 +22,14 @@ mapChanWithBackoff ::
   -> Chan a
   -> IO ThreadId
 mapChanWithBackoff increment minDelay maxDelay f chan =
-  forkIO $ getChanContents chan >>= process 0.0
+  forkIO $ getChanContents chan >>= process minDelay
   where
     process :: Float -> [a] -> IO ()
     process prevBackoff (item:next) = do
       success <- f item
       let backoff = max minDelay (min maxDelay (prevBackoff * increment))
        in if success
-            then process 0.0 next
+            then process minDelay next
             else do
               delay <- getStdRandom (randomR (0, 2 * backoff))
               threadDelay $ round $ 100000 * delay
