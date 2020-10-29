@@ -25,6 +25,7 @@ common shared-properties
     filepath,
     memory,
     network-simple,
+    network-uri,
     QuickCheck,
     quickcheck-instances,
     random,

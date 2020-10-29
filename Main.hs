@@ -43,10 +43,13 @@ parser =
      value "blobs" <> showDefault <> help "Where to store the blobs") <*>
   strOption (long "password" <> short 'p' <> help "Transfer password") <*>
   many
-    (strOption (long "peers" <> help "Hostnames of other servers to forward to")) <*>
+    (strOption (long "peers" <> help "Addresses of other servers to forward to")) <*>
   strOption
     (long "port" <>
-     value "8934" <> showDefault <> help "TCP port on which to listen")
+     value "8934" <>
+     showDefault <>
+     help
+       "TCP port.  This is both the port on which this instance will listen and the default port for connecting to peers with unspecified ports.")
 
 parserInfo :: ParserInfo Args
 parserInfo =
