@@ -9,6 +9,7 @@ import Control.Concurrent.Chan (newChan, writeChan)
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Lazy.UTF8 (fromString)
 import Data.Char (ord)
+import Data.List (stripPrefix)
 import Data.Word (Word8)
 import Network.URI
   ( parseURI
@@ -55,7 +56,10 @@ parsePeerName defaultPort name =
           uriPath uri == "" && uriQuery uri == "" && uriFragment uri == "" ->
         case uriAuthority uri of
           Just auth
-            | uriUserInfo auth == "" -> (uriRegName auth, uriPort auth)
+            | uriUserInfo auth == "" ->
+              case stripPrefix ":" (uriPort auth) of
+                Just port -> (uriRegName auth, port)
+                _ -> (name, defaultPort)
           _ -> (name, defaultPort)
     _ -> (name, defaultPort)
 
