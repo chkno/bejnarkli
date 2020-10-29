@@ -24,6 +24,7 @@ common shared-properties
     directory,
     filepath,
     memory,
+    network,
     network-simple,
     network-uri,
     QuickCheck,

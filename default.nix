@@ -1,6 +1,6 @@
 { pkgs ? import <nixpkgs> { }, lint ? false, }:
 pkgs.haskellPackages.callPackage ({ base64-bytestring, hindent, hlint, lib
-  , memory, mkDerivation, network-simple, network-uri, nixfmt, openssl
+  , memory, mkDerivation, network, network-simple, network-uri, nixfmt, openssl
   , optparse-applicative, QuickCheck, quickcheck-instances, random, SHA, socat
   , stdenv, temporary, utf8-string, }:
   mkDerivation {
@@ -10,6 +10,7 @@ pkgs.haskellPackages.callPackage ({ base64-bytestring, hindent, hlint, lib
     libraryHaskellDepends = [
       base64-bytestring
       memory
+      network
       network-simple
       network-uri
       optparse-applicative
