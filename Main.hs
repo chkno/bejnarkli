@@ -43,7 +43,10 @@ parser =
      value "blobs" <> showDefault <> help "Where to store the blobs") <*>
   strOption (long "password" <> short 'p' <> help "Transfer password") <*>
   many
-    (strOption (long "peers" <> help "Addresses of other servers to forward to")) <*>
+    (strOption
+       (long "peer" <>
+        help
+          "Addresses of other servers to forward to.  Repeat for multiple peers.")) <*>
   strOption
     (long "port" <>
      value "8934" <>
