@@ -52,9 +52,9 @@ bejnarkli_pid1=$!
 $bejnarkli --blobdir "$tmpdir2" --password "$password" --port "$port2" --peer "localhost:$port1" &
 bejnarkli_pid2=$!
 
-attempts=0
+attempts=1
 until [[ "$(message | send "$port2")" == y ]];do
-  if (( attempts++ > max_attempts ));then
+  if (( attempts++ >= max_attempts ));then
     echo "Couldn't send blob" >&2
     exit 1
   fi
@@ -63,9 +63,9 @@ done
 
 [[ "$(captured_blob_data "$tmpdir2")" == "$payload" ]]
 
-attempts=0
+attempts=1
 until [[ "$(captured_blob_data "$tmpdir1")" == "$payload" ]];do
-  if (( attempts++ > max_attempts ));then
+  if (( attempts++ >= max_attempts ));then
     echo "Blob didn't replicate" >&2
     exit 1
   fi
