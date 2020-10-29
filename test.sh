@@ -20,6 +20,10 @@ send() {
   socat - "TCP4:localhost:$port"
 }
 
+captured_blob_data() {
+  find "$1" -name incoming -prune -o -type f -exec cat {} +
+}
+
 
 tmpdir=
 bejnarkli_pid=
@@ -46,8 +50,6 @@ until [[ "$(message | send)" == y ]];do
   sleep "$delay_between_attempts"
 done
 
-captured_blob_data=$(find "$tmpdir" -name incoming -prune -o -type f -exec cat {} +)
-
-[[ "$captured_blob_data" == "$payload" ]]
+[[ "$(captured_blob_data "$tmpdir")" == "$payload" ]]
 
 echo "PASS"
