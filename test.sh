@@ -10,6 +10,7 @@ password=secret
 payload="Test content"
 max_attempts=10
 delay_between_attempts=.2
+tcp_timeout=1
 
 message() {
   echo -n B
@@ -18,7 +19,7 @@ message() {
 }
 
 send() {
-  socat - "TCP4:localhost:$1"
+  socat -t "$tcp_timeout" - "TCP4:localhost:$1"
 }
 
 captured_blob_data() {
