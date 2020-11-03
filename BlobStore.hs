@@ -12,18 +12,27 @@ module BlobStore
   , newBlobDir
   , newBlobMap
   , Password(Pass)
+  , sinkBlob
+  , sinkNamePrefixedBlob
+  , sinkTrustedBlob
+  , sinkUntrustedBlob
   , StagedBlobHandle(..)
-  , stageBlob
-  , writeNamePrefixedBlob
-  , writeTrustedBlob
-  , writeUntrustedBlob
   ) where
 
-import Control.Exception (bracket)
+import Conduit
+  ( ConduitT
+  , MonadResource
+  , ZipConduit(ZipConduit)
+  , await
+  , getZipConduit
+  , liftIO
+  )
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64.URL as Base64
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 (fromString, toString)
+import Data.Conduit (bracketP)
+import Data.Conduit.Combinators (sinkHandle, sinkLazy, takeExactlyE)
 import Data.Digest.Pure.SHA (bytestringDigest, hmacSha256)
 import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
 import qualified Data.Map.Strict as Map
@@ -35,7 +44,7 @@ import System.Directory
   , renameFile
   )
 import System.FilePath ((</>))
-import System.IO (Handle, hClose)
+import System.IO (hClose)
 import System.IO.Temp (openBinaryTempFile)
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import Test.QuickCheck.Instances.ByteString ()
@@ -67,51 +76,35 @@ newtype ExtantBlobName =
   ExtantBlob BS.ByteString
   deriving (Eq, Ord)
 
-blobName :: Password -> BL.ByteString -> BS.ByteString
-blobName (Pass password) blob =
-  BL.toStrict $ bytestringDigest $ hmacSha256 (BL.fromStrict password) blob
-
--- |Lazily write a Lazy ByteString
-tee :: Handle -> BL.ByteString -> IO BL.ByteString
-tee h stream =
-  BL.fromChunks <$> mapM (\x -> BS.hPut h x >> pure x) (BL.toChunks stream)
-
-teeToTempFile ::
-     FilePath -> String -> BL.ByteString -> IO (BL.ByteString, FilePath)
-teeToTempFile dir template stream =
-  bracket
-    (openBinaryTempFile dir template)
-    (hClose . snd)
-    (\(tmpname, tmpfile) -> (, tmpname) <$> tee tmpfile stream)
+blobName ::
+     MonadResource m => Password -> ConduitT BS.ByteString o m BS.ByteString
+blobName (Pass password) =
+  BL.toStrict . bytestringDigest . hmacSha256 (BL.fromStrict password) <$>
+  sinkLazy
 
 data StagedBlobHandle =
   StagedBlobHandle
-    { blobData :: BL.ByteString
-    , commit :: BS.ByteString -> IO ExtantBlobName
+    { commit :: BS.ByteString -> IO ExtantBlobName
     , abort :: IO ()
     }
 
 class BlobStore a where
-  stageBlob :: a -> BL.ByteString -> IO StagedBlobHandle
+  sinkBlob ::
+       MonadResource m => a -> ConduitT BS.ByteString o m StagedBlobHandle
   listBlobs :: a -> IO [ExtantBlobName]
   getBlob :: a -> ExtantBlobName -> IO BL.ByteString
 
-writeNamePrefixedBlob ::
-     BlobStore bs
+sinkNamePrefixedBlob ::
+     (BlobStore bs, MonadResource m)
   => bs
   -> Password
-  -> BL.ByteString
-  -> IO (Maybe ExtantBlobName)
-writeNamePrefixedBlob bs password stream =
-  let (name, blob) = strictPrefixSplitAt blobNameLength stream
-   in writeUntrustedBlob bs password name blob
-  where
-    strictPrefixSplitAt ::
-         Integral a => a -> BL.ByteString -> (BS.ByteString, BL.ByteString)
-    -- |Like splitAt, but the prefix is strict
-    strictPrefixSplitAt i str =
-      let tmp = BL.splitAt (fromIntegral i) str
-       in (BL.toStrict (fst tmp), snd tmp)
+  -> ConduitT BS.ByteString o m (Maybe ExtantBlobName)
+sinkNamePrefixedBlob bs password = do
+  name <- takeExactlyE blobNameLength await
+  case name of
+    Just aname
+      | BS.length aname == blobNameLength -> sinkUntrustedBlob bs password aname
+    _ -> pure Nothing
 
 newtype BlobMapStore =
   BlobMap (IORef (Map.Map ExtantBlobName BL.ByteString))
@@ -120,11 +113,11 @@ newBlobMap :: IO BlobMapStore
 newBlobMap = BlobMap <$> newIORef Map.empty
 
 instance BlobStore BlobMapStore where
-  stageBlob (BlobMap rm) blob =
+  sinkBlob (BlobMap rm) = do
+    blob <- sinkLazy
     pure
       StagedBlobHandle
-        { blobData = blob
-        , commit =
+        { commit =
             \name ->
               let ename = ExtantBlob name
                in do atomicModifyIORef' rm ((, ()) . Map.insert ename blob)
@@ -145,17 +138,20 @@ newBlobDir path = do
   pure $ BlobDir path
 
 instance BlobStore BlobDirStore where
-  stageBlob bd blob = do
-    (teeWrappedBlob, tmpPath) <- teeToTempFile (d </> "incoming") "new" blob
-    pure
-      StagedBlobHandle
-        { blobData = teeWrappedBlob
-        , commit =
-            \name -> do
-              renameFile tmpPath (blobFileName bd name)
-              pure (ExtantBlob name)
-        , abort = removeFile tmpPath
-        }
+  sinkBlob bd =
+    bracketP
+      (openBinaryTempFile (d </> "incoming") "new")
+      (hClose . snd)
+      (\(tmpPath, tmpHandle) -> do
+         sinkHandle tmpHandle
+         pure
+           StagedBlobHandle
+             { commit =
+                 \name -> do
+                   renameFile tmpPath (blobFileName bd name)
+                   pure (ExtantBlob name)
+             , abort = removeFile tmpPath
+             })
     where
       (BlobDir d) = bd
   listBlobs (BlobDir d) =
@@ -174,21 +170,28 @@ unBlobFileName relpath =
         then Just n
         else Nothing
 
-writeTrustedBlob ::
-     BlobStore bs => bs -> Password -> BL.ByteString -> IO ExtantBlobName
-writeTrustedBlob bs password blob = do
-  staged <- stageBlob bs blob
-  commit staged (blobName password (blobData staged))
+sinkTrustedBlob ::
+     (BlobStore bs, MonadResource m)
+  => bs
+  -> Password
+  -> ConduitT BS.ByteString o m ExtantBlobName
+sinkTrustedBlob bs password = do
+  (staged, name) <-
+    getZipConduit
+      (ZipConduit ((,) <$> sinkBlob bs) <*> ZipConduit (blobName password))
+  liftIO $ commit staged name
 
-writeUntrustedBlob ::
-     BlobStore bs
+sinkUntrustedBlob ::
+     (BlobStore bs, MonadResource m)
   => bs
   -> Password
   -> BS.ByteString
-  -> BL.ByteString
-  -> IO (Maybe ExtantBlobName)
-writeUntrustedBlob bs password expectedHash blob = do
-  staged <- stageBlob bs blob
-  if expectedHash == blobName password (blobData staged)
-    then Just <$> commit staged expectedHash
-    else abort staged >> pure Nothing
+  -> ConduitT BS.ByteString o m (Maybe ExtantBlobName)
+sinkUntrustedBlob bs password expectedHash = do
+  (staged, name) <-
+    getZipConduit
+      (ZipConduit ((,) <$> sinkBlob bs) <*> ZipConduit (blobName password))
+  liftIO $
+    if expectedHash == name
+      then Just <$> commit staged expectedHash
+      else abort staged >> pure Nothing

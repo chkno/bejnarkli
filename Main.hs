@@ -7,6 +7,7 @@ import Data.ByteString.UTF8 (fromString)
 import Options.Applicative
   ( Parser
   , (<**>)
+  , auto
   , execParser
   , fullDesc
   , header
@@ -15,6 +16,7 @@ import Options.Applicative
   , info
   , long
   , many
+  , option
   , short
   , showDefault
   , strOption
@@ -31,7 +33,7 @@ data Args =
     { blobdir :: String
     , password :: String
     , peers :: [String]
-    , port :: String
+    , port :: Int
     }
 
 parser :: Parser Args
@@ -47,9 +49,10 @@ parser =
        (long "peer" <>
         help
           "Addresses of other servers to forward to.  Repeat for multiple peers.")) <*>
-  strOption
+  option
+    auto
     (long "port" <>
-     value "8934" <>
+     value 8934 <>
      showDefault <>
      help
        "TCP port.  This is both the port on which this instance will listen and the default port for connecting to peers with unspecified ports.")

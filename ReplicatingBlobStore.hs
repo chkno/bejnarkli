@@ -8,10 +8,10 @@ import Bejnarkli (protocolVersion)
 import BlobStore
   ( BlobStore
   , ExtantBlobName(ExtantBlob)
-  , StagedBlobHandle(StagedBlobHandle, abort, blobData, commit)
+  , StagedBlobHandle(StagedBlobHandle, abort, commit)
   , getBlob
   , listBlobs
-  , stageBlob
+  , sinkBlob
   )
 
 sendBlobFromStore ::
@@ -31,12 +31,11 @@ data ReplicatingBlobStore bs =
 instance BlobStore bs => BlobStore (ReplicatingBlobStore bs) where
   listBlobs (ReplicatingBlobStore _ bs) = listBlobs bs
   getBlob (ReplicatingBlobStore _ bs) = getBlob bs
-  stageBlob (ReplicatingBlobStore remotes bs) blob = do
-    handle <- stageBlob bs blob
+  sinkBlob (ReplicatingBlobStore remotes bs) = do
+    handle <- sinkBlob bs
     pure
       StagedBlobHandle
-        { blobData = blobData handle
-        , abort = abort handle
+        { abort = abort handle
         , commit =
             \name -> do
               ename <- commit handle name

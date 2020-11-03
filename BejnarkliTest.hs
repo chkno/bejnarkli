@@ -2,8 +2,11 @@ module Main
   ( main
   ) where
 
+import Conduit ((.|), await, runConduitRes, yield)
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Lazy.UTF8 as U8L
+import qualified Data.ByteString.UTF8 as U8S
+import Data.Conduit.Combinators (sourceLazy)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
 import Test.QuickCheck (Property, Result, (==>), isSuccess, quickCheckResult)
 import Test.QuickCheck.Instances.ByteString ()
@@ -14,28 +17,35 @@ import BlobStore (Password, blobName, getBlob, listBlobs, newBlobMap)
 
 prop_ServerWritesBlob :: Password -> BL.ByteString -> Property
 prop_ServerWritesBlob password b =
-  let name = blobName password b
-      stream = BL.concat [BL.pack [66], BL.fromStrict name, b]
-   in monadicIO $ do
-        bs <- run newBlobMap
-        result <- run $ bejnarkliServer bs password stream
-        assert $ result == U8L.fromString "y"
-        storedBlobs <- run $ listBlobs bs
-        storedBlob <- run $ getBlob bs $ head storedBlobs
-        assert $ storedBlob == b
+  monadicIO $ do
+    name <- run $ runConduitRes $ sourceLazy b .| blobName password
+    bs <- run newBlobMap
+    result <-
+      run $
+      runConduitRes $
+      (yield (BS.pack [66]) >> yield name >> sourceLazy b) .|
+      bejnarkliServer bs password .|
+      await
+    assert $ result == Just (U8S.fromString "y")
+    storedBlobs <- run $ listBlobs bs
+    storedBlob <- run $ getBlob bs $ head storedBlobs
+    assert $ storedBlob == b
 
 prop_ServerRejectsBadPassword ::
      Password -> Password -> BL.ByteString -> Property
 prop_ServerRejectsBadPassword pass1 pass2 b =
-  (pass1 /= pass2) ==>
-  let name = blobName pass1 b
-      stream = BL.append (BL.fromStrict name) b
-   in monadicIO $ do
-        bs <- run newBlobMap
-        result <- run $ bejnarkliServer bs pass2 stream
-        assert $ result == U8L.fromString "n"
-        storedBlobs <- run $ listBlobs bs
-        assert $ null storedBlobs
+  (pass1 /= pass2) ==> monadicIO $ do
+    name <- run $ runConduitRes $ sourceLazy b .| blobName pass1
+    bs <- run newBlobMap
+    result <-
+      run $
+      runConduitRes $
+      (yield (BS.pack [66]) >> yield name >> sourceLazy b) .|
+      bejnarkliServer bs pass2 .|
+      await
+    assert $ result == Just (U8S.fromString "n")
+    storedBlobs <- run $ listBlobs bs
+    assert $ null storedBlobs
 
 tests :: IO [Result]
 tests =

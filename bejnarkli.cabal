@@ -20,6 +20,8 @@ common shared-properties
     base,
     base64-bytestring,
     bytestring,
+    conduit,
+    conduit-extra,
     containers,
     directory,
     filepath,
