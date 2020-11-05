@@ -23,6 +23,8 @@ common shared-properties
     conduit,
     conduit-extra,
     containers,
+    cryptonite,
+    cryptonite-conduit,
     directory,
     filepath,
     memory,
@@ -32,7 +34,6 @@ common shared-properties
     QuickCheck,
     quickcheck-instances,
     random,
-    SHA,
     streaming-commons,
     temporary,
     utf8-string

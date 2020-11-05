@@ -27,13 +27,16 @@ import Conduit
   , getZipConduit
   , liftIO
   )
+import qualified Crypto.Hash.Algorithms
+import Crypto.MAC.HMAC (HMAC)
+import Crypto.MAC.HMAC.Conduit (sinkHMAC)
+import qualified Data.ByteArray as BA
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64.URL as Base64
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 (fromString, toString)
 import Data.Conduit (bracketP)
 import Data.Conduit.Combinators (sinkHandle, sinkLazy, takeExactlyE)
-import Data.Digest.Pure.SHA (bytestringDigest, hmacSha256)
 import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (mapMaybe)
@@ -78,9 +81,9 @@ newtype ExtantBlobName =
 
 blobName ::
      MonadResource m => Password -> ConduitT BS.ByteString o m BS.ByteString
-blobName (Pass password) =
-  BL.toStrict . bytestringDigest . hmacSha256 (BL.fromStrict password) <$>
-  sinkLazy
+blobName (Pass password) = do
+  digest <- sinkHMAC password
+  pure $ BA.convert (digest :: HMAC Crypto.Hash.Algorithms.SHA256)
 
 data StagedBlobHandle =
   StagedBlobHandle

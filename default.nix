@@ -1,8 +1,8 @@
 { pkgs ? import <nixpkgs> { }, lint ? false, }:
 pkgs.haskellPackages.callPackage ({ base64-bytestring, conduit, conduit-extra
-  , hindent, hlint, lib, memory, mkDerivation, network, network-simple
-  , network-uri, nixfmt, openssl, optparse-applicative, QuickCheck
-  , quickcheck-instances, random, SHA, socat, stdenv, streaming-commons
+  , cryptonite, cryptonite-conduit, hindent, hlint, lib, memory, mkDerivation
+  , network, network-simple, network-uri, nixfmt, openssl, optparse-applicative
+  , QuickCheck, quickcheck-instances, random, socat, stdenv, streaming-commons
   , temporary, utf8-string, }:
   mkDerivation {
     pname = "bejnarkli";
@@ -12,12 +12,13 @@ pkgs.haskellPackages.callPackage ({ base64-bytestring, conduit, conduit-extra
       base64-bytestring
       conduit
       conduit-extra
+      cryptonite
+      cryptonite-conduit
       memory
       network
       network-simple
       network-uri
       optparse-applicative
-      SHA
       streaming-commons
       random
       temporary
