@@ -25,7 +25,7 @@ import Options.Applicative
 import Options.Applicative.Types (ParserInfo)
 import ReplicatingBlobStore (ReplicatingBlobStore(ReplicatingBlobStore))
 
-import Bejnarkli (bejnarkliClient)
+import TCPClient (retryingTCPClient)
 import TCPServer (tCPServer)
 
 data Args =
@@ -67,6 +67,6 @@ main :: IO ()
 main = do
   args <- execParser parserInfo
   localBS <- newBlobDir (blobdir args)
-  peerClients <- mapM (bejnarkliClient (port args)) (peers args)
+  peerClients <- mapM (retryingTCPClient (port args)) (peers args)
   let replicatingBS = ReplicatingBlobStore peerClients localBS
    in tCPServer (port args) replicatingBS (Pass (fromString (password args)))

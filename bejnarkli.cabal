@@ -33,6 +33,7 @@ common shared-properties
     quickcheck-instances,
     random,
     SHA,
+    streaming-commons,
     temporary,
     utf8-string
   default-language:    Haskell2010

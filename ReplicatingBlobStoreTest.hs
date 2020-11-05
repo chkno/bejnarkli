@@ -2,36 +2,49 @@ module Main
   ( main
   ) where
 
-import Conduit ((.|), await, runConduitRes)
+import Conduit (MonadUnliftIO, (.|), liftIO, runConduitRes)
 import qualified Data.ByteString.Lazy as BL
-import Data.ByteString.UTF8 (fromString)
 import Data.Conduit.Combinators (sourceLazy)
-import Data.Maybe (fromJust)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
 import Test.QuickCheck (Property, Result, isSuccess, quickCheckResult)
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, run)
 
-import Bejnarkli (bejnarkliServer)
-import BlobStore (BlobStore, Password, getBlob, newBlobMap, sinkTrustedBlob)
+import Bejnarkli (bejnarkliClient, bejnarkliServer)
+import BlobStore
+  ( BlobStore
+  , ExtantBlobName(ExtantBlob)
+  , Password
+  , getBlob
+  , newBlobMap
+  , sinkTrustedBlob
+  )
 import ReplicatingBlobStore (ReplicatingBlobStore(ReplicatingBlobStore))
 
-nonTCPBejnarkliClient ::
-     BlobStore bs => bs -> Password -> BL.ByteString -> IO ()
-nonTCPBejnarkliClient bs password blob = do
+localBejnarkliClient ::
+     (BlobStore bs, MonadUnliftIO m)
+  => bs
+  -> Password
+  -> (bs, ExtantBlobName)
+  -> m ()
+localBejnarkliClient remoteBS password (localBS, ename) = do
+  blob <- liftIO $ getBlob localBS ename
   response <-
-    runConduitRes $ sourceLazy blob .| bejnarkliServer bs password .| await
-  if fromJust response == fromString "y"
+    runConduitRes $
+    sourceLazy blob .| bejnarkliClient (bejnarkliServer remoteBS password) name
+  if response
     then pure ()
     else error "Unexpected transfer failure"
+  where
+    (ExtantBlob name) = ename
 
 prop_Replicates :: Password -> BL.ByteString -> Property
 prop_Replicates password b =
   monadicIO $ do
     localBS <- run newBlobMap
     remoteBS <- run newBlobMap
-    let remoteServer = nonTCPBejnarkliClient remoteBS password
-        replicatedBS = ReplicatingBlobStore [remoteServer] localBS
+    let replicatedBS =
+          ReplicatingBlobStore [localBejnarkliClient remoteBS password] localBS
      in do ename <-
              run $
              runConduitRes $

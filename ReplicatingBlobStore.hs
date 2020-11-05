@@ -2,31 +2,17 @@ module ReplicatingBlobStore
   ( ReplicatingBlobStore(..)
   ) where
 
-import qualified Data.ByteString.Lazy as BL
-
-import Bejnarkli (protocolVersion)
 import BlobStore
   ( BlobStore
-  , ExtantBlobName(ExtantBlob)
+  , ExtantBlobName
   , StagedBlobHandle(StagedBlobHandle, abort, commit)
   , getBlob
   , listBlobs
   , sinkBlob
   )
 
-sendBlobFromStore ::
-     BlobStore bs => bs -> ExtantBlobName -> (BL.ByteString -> IO ()) -> IO ()
-sendBlobFromStore bs name remoteServer = do
-  blob <- getBlob bs name
-  _ <-
-    remoteServer $
-    BL.concat [BL.pack [protocolVersion], BL.fromStrict rawname, blob]
-  pure ()
-  where
-    (ExtantBlob rawname) = name
-
 data ReplicatingBlobStore bs =
-  ReplicatingBlobStore [BL.ByteString -> IO ()] bs
+  ReplicatingBlobStore [(bs, ExtantBlobName) -> IO ()] bs
 
 instance BlobStore bs => BlobStore (ReplicatingBlobStore bs) where
   listBlobs (ReplicatingBlobStore _ bs) = listBlobs bs
@@ -39,6 +25,6 @@ instance BlobStore bs => BlobStore (ReplicatingBlobStore bs) where
         , commit =
             \name -> do
               ename <- commit handle name
-              mapM_ (sendBlobFromStore bs ename) remotes
+              mapM_ (\r -> r (bs, ename)) remotes
               pure ename
         }
