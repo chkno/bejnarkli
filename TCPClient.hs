@@ -2,12 +2,18 @@ module TCPClient
   ( retryingTCPClient
   ) where
 
-import Conduit (ConduitT, (.|), liftIO, runConduit)
+import Conduit (ConduitT, (.|), liftIO, runConduitRes)
 import Control.Concurrent.Chan (newChan, writeChan)
+import Control.Monad.Trans.Resource (ResourceT)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.UTF8 as U8S
-import Data.Conduit.Combinators (sourceLazy)
-import Data.Conduit.Network (appSink, appSource, clientSettings, runTCPClient)
+import Data.Conduit.Network
+  ( AppData
+  , appSink
+  , appSource
+  , clientSettings
+  , runTCPClient
+  )
 import Data.List (stripPrefix)
 import Data.Maybe (fromJust)
 import Data.Streaming.Network (appRawSocket)
@@ -52,20 +58,21 @@ tCPClient ::
      Int
   -> String
   -> BS.ByteString
-  -> ConduitT () BS.ByteString IO ()
+  -> ConduitT () BS.ByteString (ResourceT IO) ()
   -> IO Bool
 tCPClient defaultPort hostString blobHash blobData =
   let (port, host) = parsePeerName defaultPort hostString
-   in runTCPClient
-        (clientSettings port (U8S.fromString host))
-        (\appdata ->
-           runConduit $
-           blobData .|
-           bejnarkliClient
-             (appSink appdata >>
-              liftIO (shutdown (fromJust (appRawSocket appdata)) ShutdownSend) >>
-              appSource appdata)
-             blobHash)
+   in runTCPClient (clientSettings port (U8S.fromString host)) app
+  where
+    app :: AppData -> IO Bool
+    app appdata =
+      runConduitRes $
+      blobData .|
+      bejnarkliClient
+        (appSink appdata >>
+         liftIO (shutdown (fromJust (appRawSocket appdata)) ShutdownSend) >>
+         appSource appdata)
+        blobHash
 
 -- Maybe make these flags?
 retryIncrement :: Float
@@ -80,18 +87,13 @@ retryMaxDelay = 600
 retryingTCPClient ::
      BlobStore bs => Int -> String -> IO ((bs, ExtantBlobName) -> IO ())
 retryingTCPClient defaultPort hostString = do
-  chan <- newChan
+  chan <- liftIO newChan
   _ <-
-    mapChanWithBackoff
-      retryIncrement
-      retryMinDelay
-      retryMaxDelay
-      (\(bs, ename) ->
-         let (ExtantBlob hash) = ename
-          in tCPClient
-               defaultPort
-               hostString
-               hash
-               (liftIO (getBlob bs ename) >>= sourceLazy))
-      chan
+    liftIO $
+    mapChanWithBackoff retryIncrement retryMinDelay retryMaxDelay tryOnce chan
   pure $ writeChan chan
+  where
+    tryOnce :: BlobStore bs => (bs, ExtantBlobName) -> IO Bool
+    tryOnce (bs, ename) =
+      let (ExtantBlob hash) = ename
+       in tCPClient defaultPort hostString hash (getBlob bs ename)

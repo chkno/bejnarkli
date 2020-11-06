@@ -2,9 +2,9 @@ module Main
   ( main
   ) where
 
-import Conduit (MonadUnliftIO, (.|), liftIO, runConduitRes)
+import Conduit ((.|), runConduitRes)
 import qualified Data.ByteString.Lazy as BL
-import Data.Conduit.Combinators (sourceLazy)
+import Data.Conduit.Combinators (sinkLazy, sourceLazy)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
 import Test.QuickCheck (Property, Result, isSuccess, quickCheckResult)
 import Test.QuickCheck.Instances.ByteString ()
@@ -22,16 +22,12 @@ import BlobStore
 import ReplicatingBlobStore (ReplicatingBlobStore(ReplicatingBlobStore))
 
 localBejnarkliClient ::
-     (BlobStore bs, MonadUnliftIO m)
-  => bs
-  -> Password
-  -> (bs, ExtantBlobName)
-  -> m ()
+     BlobStore bs => bs -> Password -> (bs, ExtantBlobName) -> IO ()
 localBejnarkliClient remoteBS password (localBS, ename) = do
-  blob <- liftIO $ getBlob localBS ename
   response <-
     runConduitRes $
-    sourceLazy blob .| bejnarkliClient (bejnarkliServer remoteBS password) name
+    getBlob localBS ename .|
+    bejnarkliClient (bejnarkliServer remoteBS password) name
   if response
     then pure ()
     else error "Unexpected transfer failure"
@@ -49,8 +45,10 @@ prop_Replicates password b =
              run $
              runConduitRes $
              sourceLazy b .| sinkTrustedBlob replicatedBS password
-           locallyStored <- run $ getBlob localBS ename
-           remotelyStored <- run $ getBlob remoteBS ename
+           locallyStored <-
+             run $ runConduitRes $ getBlob localBS ename .| sinkLazy
+           remotelyStored <-
+             run $ runConduitRes $ getBlob remoteBS ename .| sinkLazy
            assert $ locallyStored == b
            assert $ remotelyStored == b
 

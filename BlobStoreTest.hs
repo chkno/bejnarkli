@@ -4,7 +4,7 @@ module Main
 
 import Conduit ((.|), runConduitRes, yield)
 import qualified Data.ByteString.Lazy as BL
-import Data.Conduit.Combinators (sourceLazy)
+import Data.Conduit.Combinators (sinkLazy, sourceLazy)
 import Data.Maybe (fromJust, isNothing)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
 import System.IO.Temp (withSystemTempDirectory)
@@ -32,7 +32,7 @@ prop_BlobStoreWriteReadTrusted ::
 prop_BlobStoreWriteReadTrusted bs password b =
   monadicIO $ do
     ename <- run $ runConduitRes $ sourceLazy b .| sinkTrustedBlob bs password
-    ret <- run $ getBlob bs ename
+    ret <- run $ runConduitRes $ getBlob bs ename .| sinkLazy
     assert $ ret == b
 
 prop_BlobStoreWriteReadCorrectHash ::
@@ -42,7 +42,7 @@ prop_BlobStoreWriteReadCorrectHash bs password b =
     name <- run $ runConduitRes $ sourceLazy b .| blobName password
     ename <-
       run $ runConduitRes $ sourceLazy b .| sinkUntrustedBlob bs password name
-    ret <- run $ getBlob bs (fromJust ename)
+    ret <- run $ runConduitRes $ getBlob bs (fromJust ename) .| sinkLazy
     assert $ ret == b
 
 prop_BlobStoreWriteWrongHash ::
@@ -78,7 +78,7 @@ prop_BlobStoreWritePrefixedRead bs password b =
       run $
       runConduitRes $
       (yield name >> sourceLazy b) .| sinkNamePrefixedBlob bs password
-    ret <- run $ getBlob bs (fromJust ename)
+    ret <- run $ runConduitRes $ getBlob bs (fromJust ename) .| sinkLazy
     assert $ ret == b
 
 prop_BlobStoreWritePrefixedWrongHash ::

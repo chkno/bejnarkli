@@ -6,7 +6,7 @@ import Conduit ((.|), await, runConduitRes, yield)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.UTF8 as U8S
-import Data.Conduit.Combinators (sourceLazy)
+import Data.Conduit.Combinators (sinkLazy, sourceLazy)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
 import Test.QuickCheck (Property, Result, (==>), isSuccess, quickCheckResult)
 import Test.QuickCheck.Instances.ByteString ()
@@ -28,7 +28,8 @@ prop_ServerWritesBlob password b =
       await
     assert $ result == Just (U8S.fromString "y")
     storedBlobs <- run $ listBlobs bs
-    storedBlob <- run $ getBlob bs $ head storedBlobs
+    storedBlob <-
+      run $ runConduitRes $ getBlob bs (head storedBlobs) .| sinkLazy
     assert $ storedBlob == b
 
 prop_ServerRejectsBadPassword ::

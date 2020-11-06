@@ -26,7 +26,9 @@ import Conduit
   , await
   , getZipConduit
   , liftIO
+  , sourceFile
   )
+import Control.Monad.Trans.Resource (ResourceT)
 import qualified Crypto.Hash.Algorithms
 import Crypto.MAC.HMAC (HMAC)
 import Crypto.MAC.HMAC.Conduit (sinkHMAC)
@@ -36,7 +38,7 @@ import qualified Data.ByteString.Base64.URL as Base64
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 (fromString, toString)
 import Data.Conduit (bracketP)
-import Data.Conduit.Combinators (sinkHandle, sinkLazy, takeExactlyE)
+import Data.Conduit.Combinators (sinkHandle, sinkLazy, sourceLazy, takeExactlyE)
 import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (mapMaybe)
@@ -95,7 +97,7 @@ class BlobStore a where
   sinkBlob ::
        MonadResource m => a -> ConduitT BS.ByteString o m StagedBlobHandle
   listBlobs :: a -> IO [ExtantBlobName]
-  getBlob :: a -> ExtantBlobName -> IO BL.ByteString
+  getBlob :: a -> ExtantBlobName -> ConduitT i BS.ByteString (ResourceT IO) ()
 
 sinkNamePrefixedBlob ::
      (BlobStore bs, MonadResource m)
@@ -129,8 +131,8 @@ instance BlobStore BlobMapStore where
         }
   listBlobs (BlobMap rm) = Map.keys <$> readIORef rm
   getBlob (BlobMap rm) name = do
-    m <- readIORef rm
-    pure $ m Map.! name
+    m <- liftIO $ readIORef rm
+    sourceLazy $ m Map.! name
 
 newtype BlobDirStore =
   BlobDir FilePath
@@ -159,7 +161,7 @@ instance BlobStore BlobDirStore where
       (BlobDir d) = bd
   listBlobs (BlobDir d) =
     fmap ExtantBlob . mapMaybe unBlobFileName <$> listDirectory d
-  getBlob bd (ExtantBlob name) = BL.readFile (blobFileName bd name)
+  getBlob bd (ExtantBlob name) = sourceFile (blobFileName bd name)
 
 blobFileName :: BlobDirStore -> BS.ByteString -> FilePath
 blobFileName (BlobDir d) blobname = d </> toString (Base64.encode blobname)
