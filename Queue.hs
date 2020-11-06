@@ -6,6 +6,7 @@ module Queue
 
 import Control.Concurrent (ThreadId, forkIO, threadDelay)
 import Control.Concurrent.Chan (Chan, getChanContents, writeChan)
+import Control.Exception (try)
 import System.Random (getStdRandom, randomR)
 
 -- |Apply f to items written to the channel.  f returns a bool indicating success.
@@ -26,9 +27,9 @@ mapChanWithBackoff increment minDelay maxDelay f chan =
   where
     process :: Float -> [a] -> IO ()
     process prevBackoff (item:next) = do
-      success <- f item
+      success <- try $ f item :: IO (Either IOError Bool)
       let backoff = max minDelay (min maxDelay (prevBackoff * increment))
-       in if success
+       in if success == Right True
             then process minDelay next
             else do
               delay <- getStdRandom (randomR (0, 2 * backoff))
