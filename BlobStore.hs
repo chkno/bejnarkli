@@ -139,13 +139,13 @@ newtype BlobDirStore =
 
 newBlobDir :: FilePath -> IO BlobDirStore
 newBlobDir path = do
-  createDirectoryIfMissing True (path </> "incoming")
+  createDirectoryIfMissing True (path </> ".incoming")
   pure $ BlobDir path
 
 instance BlobStore BlobDirStore where
   sinkBlob bd =
     bracketP
-      (openBinaryTempFile (d </> "incoming") "new")
+      (openBinaryTempFile (d </> ".incoming") "new")
       (hClose . snd)
       (\(tmpPath, tmpHandle) -> do
          sinkHandle tmpHandle
