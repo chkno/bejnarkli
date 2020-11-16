@@ -35,6 +35,7 @@ common shared-properties
     quickcheck-instances,
     random,
     resourcet,
+    sqlite-simple,
     streaming-commons,
     temporary,
     utf8-string
@@ -89,6 +90,12 @@ test-suite blobstore-test
     ReplicatingBlobStore
     TCPClient
   main-is:             BlobStoreTest.hs
+
+test-suite persistent-once-test
+  import: shared-properties
+  type:                exitcode-stdio-1.0
+  other-modules:       PersistentOnce
+  main-is:             PersistentOnceTest.hs
 
 test-suite queue-test
   import: shared-properties

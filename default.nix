@@ -2,8 +2,8 @@
 pkgs.haskellPackages.callPackage ({ base64-bytestring, conduit, conduit-extra
   , cryptonite, cryptonite-conduit, hindent, hlint, lib, memory, mkDerivation
   , network, network-simple, network-uri, nixfmt, openssl, optparse-applicative
-  , QuickCheck, quickcheck-instances, random, resourcet, socat, stdenv
-  , streaming-commons, temporary, utf8-string, }:
+  , QuickCheck, quickcheck-instances, random, resourcet, socat, sqlite-simple
+  , stdenv, streaming-commons, temporary, utf8-string, }:
   mkDerivation {
     pname = "bejnarkli";
     version = "0.0.1.0";
@@ -19,6 +19,7 @@ pkgs.haskellPackages.callPackage ({ base64-bytestring, conduit, conduit-extra
       network-simple
       network-uri
       optparse-applicative
+      sqlite-simple
       streaming-commons
       random
       resourcet
