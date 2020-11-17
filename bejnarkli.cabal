@@ -97,6 +97,12 @@ test-suite persistent-once-test
   other-modules:       PersistentOnce
   main-is:             PersistentOnceTest.hs
 
+test-suite queue-test
+  import: shared-properties
+  type:                exitcode-stdio-1.0
+  other-modules:       Queue
+  main-is:             QueueTest.hs
+
 test-suite retry-queue-test
   import: shared-properties
   type:                exitcode-stdio-1.0
