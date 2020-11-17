@@ -90,9 +90,14 @@ retryingTCPClient defaultPort hostString = do
   chan <- liftIO newChan
   _ <-
     liftIO $
-    mapChanWithBackoff retryIncrement retryMinDelay retryMaxDelay tryOnce chan
+    mapChanWithBackoff
+      retryIncrement
+      retryMinDelay
+      retryMaxDelay
+      attemptSend
+      chan
   pure $ writeChan chan
   where
-    tryOnce :: BlobStore bs => (bs, ExtantBlobName) -> IO Bool
-    tryOnce (bs, ename@(ExtantBlob hash)) =
+    attemptSend :: BlobStore bs => (bs, ExtantBlobName) -> IO Bool
+    attemptSend (bs, ename@(ExtantBlob hash)) =
       tCPClient defaultPort hostString hash (getBlob bs ename)
