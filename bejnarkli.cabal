@@ -55,7 +55,7 @@ library
   exposed-modules:     Bejnarkli
   other-modules:
     BlobStore
-    Queue
+    RetryQueue
     TCPClient
 
 executable bejnarkli
@@ -64,7 +64,7 @@ executable bejnarkli
   other-modules:
     Bejnarkli,
     BlobStore,
-    Queue,
+    RetryQueue,
     ReplicatingBlobStore,
     TCPClient,
     TCPServer
@@ -76,7 +76,7 @@ test-suite bejnarkli-test
   other-modules:
     Bejnarkli,
     BlobStore,
-    Queue,
+    RetryQueue,
     TCPClient
   main-is:             BejnarkliTest.hs
 
@@ -86,7 +86,7 @@ test-suite blobstore-test
   other-modules:
     Bejnarkli
     BlobStore
-    Queue
+    RetryQueue
     ReplicatingBlobStore
     TCPClient
   main-is:             BlobStoreTest.hs
@@ -97,11 +97,11 @@ test-suite persistent-once-test
   other-modules:       PersistentOnce
   main-is:             PersistentOnceTest.hs
 
-test-suite queue-test
+test-suite retry-queue-test
   import: shared-properties
   type:                exitcode-stdio-1.0
-  other-modules:       Queue
-  main-is:             QueueTest.hs
+  other-modules:       RetryQueue
+  main-is:             RetryQueueTest.hs
 
 test-suite replicatedblobstore-test
   import: shared-properties
@@ -109,7 +109,7 @@ test-suite replicatedblobstore-test
   other-modules:
     Bejnarkli
     BlobStore
-    Queue
+    RetryQueue
     ReplicatingBlobStore
     TCPClient
   main-is:             ReplicatingBlobStoreTest.hs

@@ -16,7 +16,7 @@ import Control.Concurrent.MVar
   , takeMVar
   )
 
-import Queue (mapChanWithBackoff)
+import RetryQueue (mapChanWithBackoff)
 
 prop_mapChanWithBackoffDoesStuff :: Int -> Property
 prop_mapChanWithBackoffDoesStuff attemptsNeeded =

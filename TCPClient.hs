@@ -33,7 +33,7 @@ import Text.Read (readMaybe)
 
 import Bejnarkli (bejnarkliClient)
 import BlobStore (BlobStore, ExtantBlobName(ExtantBlob), getBlob)
-import Queue (mapChanWithBackoff)
+import RetryQueue (mapChanWithBackoff)
 
 -- We use parseURI rather than just splitting on : because IPv6 literals
 parsePeerName :: Int -> String -> (Int, String)

@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Queue
+module RetryQueue
   ( mapChanWithBackoff
   ) where
 
