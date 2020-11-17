@@ -58,6 +58,7 @@ library
     BlobStore
     PersistentOnce
     Queue
+    Retransmit
     RetryQueue
     TCPClient
 
@@ -69,6 +70,7 @@ executable bejnarkli
     BlobStore,
     PersistentOnce,
     Queue,
+    Retransmit,
     RetryQueue,
     ReplicatingBlobStore,
     TCPClient,

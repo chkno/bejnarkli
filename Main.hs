@@ -2,7 +2,6 @@ module Main
   ( main
   ) where
 
-import BlobStore (Password(Pass), newBlobDir)
 import Data.ByteString.UTF8 (fromString)
 import Options.Applicative
   ( Parser
@@ -23,8 +22,10 @@ import Options.Applicative
   , value
   )
 import Options.Applicative.Types (ParserInfo)
-import ReplicatingBlobStore (ReplicatingBlobStore(ReplicatingBlobStore))
 
+import BlobStore (Password(Pass), newBlobDir)
+import ReplicatingBlobStore (ReplicatingBlobStore(ReplicatingBlobStore))
+import Retransmit (retransmit)
 import TCPClient (retryingTCPClient)
 import TCPServer (tCPServer)
 
@@ -69,5 +70,6 @@ main = do
   localBS <- newBlobDir (blobdir args)
   peerClients <-
     mapM (retryingTCPClient (blobdir args) (port args)) (peers args)
+  _ <- retransmit localBS peerClients
   let replicatingBS = ReplicatingBlobStore peerClients localBS
    in tCPServer (port args) replicatingBS (Pass (fromString (password args)))

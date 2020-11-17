@@ -7,6 +7,7 @@ bejnarkli=${1:-$PWD/dist-newstyle/build/*/*/bejnarkli-*/x/bejnarkli/build/bejnar
 port1=8934
 port2=8935
 port3=8936
+port4=8937
 password=secret
 payload="Test content"
 max_attempts=10
@@ -41,16 +42,18 @@ wait_for_blob() {
 tmpdir1=
 tmpdir2=
 tmpdir3=
+tmpdir4=
 bejnarkli_pid1=
 bejnarkli_pid2=
 bejnarkli_pid3=
+bejnarkli_pid4=
 cleanup() {
-  for pid in "$bejnarkli_pid1" "$bejnarkli_pid2" "$bejnarkli_pid3";do
+  for pid in "$bejnarkli_pid1" "$bejnarkli_pid2" "$bejnarkli_pid3" "$bejnarkli_pid4";do
     if [[ "$pid" ]];then
       kill "$pid"
     fi
   done
-  for tmpdir in "$tmpdir1" "$tmpdir2" "$tmpdir3";do
+  for tmpdir in "$tmpdir1" "$tmpdir2" "$tmpdir3" "$tmpdir4";do
     if [[ "$tmpdir" && -e "$tmpdir" ]];then
       rm -rf "$tmpdir"
     fi
@@ -61,6 +64,7 @@ trap cleanup EXIT
 tmpdir1=$(mktemp -d)
 tmpdir2=$(mktemp -d)
 tmpdir3=$(mktemp -d)
+tmpdir4=$(mktemp -d)
 
 $bejnarkli --blobdir "$tmpdir1" --password "$password" --port "$port1" &
 bejnarkli_pid1=$!
@@ -86,5 +90,15 @@ wait_for_blob "$tmpdir1"
 $bejnarkli --blobdir "$tmpdir3" --password "$password" --port "$port3" &
 bejnarkli_pid3=$!
 wait_for_blob "$tmpdir3"
+
+# Restart a server with a new peer & expect the blob to be forwarded
+kill "$bejnarkli_pid3"
+wait "$bejnarkli_pid3" || true
+$bejnarkli --blobdir "$tmpdir3" --password "$password" --port "$port3" --peer "localhost:$port4" &
+bejnarkli_pid3=$!
+$bejnarkli --blobdir "$tmpdir4" --password "$password" --port "$port4" &
+bejnarkli_pid4=$!
+wait_for_blob "$tmpdir4"
+
 
 echo "PASS"
