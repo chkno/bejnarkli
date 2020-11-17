@@ -27,6 +27,9 @@ correct :: Int -> Int -> Bool
 correct 0 count = count == 0
 correct _ count = count == 1
 
+inc :: IORef Int -> IO ()
+inc count = atomicModifyIORef' count ((, ()) . (+ 1))
+
 prop_Once :: BS.ByteString -> NonNegative Int -> Property
 prop_Once name (NonNegative n) =
   monadicIO $ run $ withSystemTempDirectory "bej" aux
@@ -37,8 +40,6 @@ prop_Once name (NonNegative n) =
       replicateM_ n (once (tmpdir </> "once-db") name $ inc count >> pure True)
       finalCount <- readIORef count
       pure $ correct n finalCount
-    inc :: IORef Int -> IO ()
-    inc count = atomicModifyIORef' count ((, ()) . (+ 1))
 
 prop_OnceConcurrently :: BS.ByteString -> NonNegative Int -> Property
 prop_OnceConcurrently name (NonNegative n) =
@@ -52,8 +53,6 @@ prop_OnceConcurrently name (NonNegative n) =
         replicate n (once (tmpdir </> "once-db") name $ inc count >> pure True)
       finalCount <- readIORef count
       pure $ correct n finalCount
-    inc :: IORef Int -> IO ()
-    inc count = atomicModifyIORef' count ((, ()) . (+ 1))
 
 tests :: IO [Result]
 tests =
