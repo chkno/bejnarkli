@@ -33,7 +33,7 @@ import System.IO.Unsafe (unsafePerformIO)
 import Queue (Queue, dequeue, enqueue, newQueue)
 
 -- Perform action only once
-once :: FilePath -> BS.ByteString -> IO () -> IO ()
+once :: FilePath -> BS.ByteString -> IO Bool -> IO Bool
 once databaseFile name action =
   oneAtATime name $ onceDisk databaseFile name action
 
@@ -41,11 +41,12 @@ inFlight :: MVar (Map.Map BS.ByteString (Queue (MVar ())))
 {-# NOINLINE inFlight #-}
 inFlight = unsafePerformIO $ newMVar Map.empty
 
-oneAtATime :: BS.ByteString -> IO () -> IO ()
+oneAtATime :: BS.ByteString -> IO Bool -> IO Bool
 oneAtATime name action = do
   waitForMyTurn
-  action
+  ret <- action
   wakeupNextContender -- TODO: bracket
+  pure ret
   where
     waitForMyTurn :: IO ()
     waitForMyTurn = do
@@ -71,13 +72,16 @@ oneAtATime name action = do
                     (Map.update (const inFlightMapEntry) name inFlightMap, next)
       maybe (pure ()) (`putMVar` ()) nextContender
 
-onceDisk :: FilePath -> BS.ByteString -> IO () -> IO ()
+onceDisk :: FilePath -> BS.ByteString -> IO Bool -> IO Bool
 onceDisk databaseFile name action =
   withConnection databaseFile checkDone >>= \case
-    True -> pure ()
+    True -> pure True
     False -> do
-      action
-      withConnection databaseFile markDone
+      ret <- action
+      if ret
+        then withConnection databaseFile markDone
+        else pure ()
+      pure ret
     -- SQLite is pretty heavy-weight for this, but it
     --   * is well-supported
     --   * is unlikely to become abandonware

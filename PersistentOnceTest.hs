@@ -34,7 +34,7 @@ prop_Once name (NonNegative n) =
     aux :: FilePath -> IO Bool
     aux tmpdir = do
       count <- newIORef 0
-      replicateM_ n (once (tmpdir </> "once-db") name $ inc count)
+      replicateM_ n (once (tmpdir </> "once-db") name $ inc count >> pure True)
       finalCount <- readIORef count
       pure $ correct n finalCount
     inc :: IORef Int -> IO ()
@@ -49,7 +49,7 @@ prop_OnceConcurrently name (NonNegative n) =
       count <- newIORef 0
       withPool (n + 1) $ \pool ->
         parallel_ pool $
-        replicate n (once (tmpdir </> "once-db") name $ inc count)
+        replicate n (once (tmpdir </> "once-db") name $ inc count >> pure True)
       finalCount <- readIORef count
       pure $ correct n finalCount
     inc :: IORef Int -> IO ()
