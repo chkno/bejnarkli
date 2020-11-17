@@ -31,6 +31,7 @@ common shared-properties
     network,
     network-simple,
     network-uri,
+    parallel-io,
     QuickCheck,
     quickcheck-instances,
     random,
@@ -94,7 +95,7 @@ test-suite blobstore-test
 test-suite persistent-once-test
   import: shared-properties
   type:                exitcode-stdio-1.0
-  other-modules:       PersistentOnce
+  other-modules:       PersistentOnce Queue
   main-is:             PersistentOnceTest.hs
 
 test-suite queue-test

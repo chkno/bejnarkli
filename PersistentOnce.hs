@@ -9,7 +9,17 @@ module PersistentOnce
   ( once
   ) where
 
+import Control.Concurrent.MVar
+  ( MVar
+  , modifyMVar
+  , newEmptyMVar
+  , newMVar
+  , putMVar
+  , takeMVar
+  )
 import qualified Data.ByteString as BS
+import qualified Data.Map.Strict as Map
+import Data.Maybe (isJust, isNothing)
 import Database.SQLite.Simple
   ( Connection
   , Only(Only)
@@ -18,10 +28,51 @@ import Database.SQLite.Simple
   , query
   , withConnection
   )
+import System.IO.Unsafe (unsafePerformIO)
+
+import Queue (Queue, dequeue, enqueue, newQueue)
 
 -- Perform action only once
 once :: FilePath -> BS.ByteString -> IO () -> IO ()
 once databaseFile name action =
+  oneAtATime name $ onceDisk databaseFile name action
+
+inFlight :: MVar (Map.Map BS.ByteString (Queue (MVar ())))
+{-# NOINLINE inFlight #-}
+inFlight = unsafePerformIO $ newMVar Map.empty
+
+oneAtATime :: BS.ByteString -> IO () -> IO ()
+oneAtATime name action = do
+  waitForMyTurn
+  action
+  wakeupNextContender -- TODO: bracket
+  where
+    waitForMyTurn :: IO ()
+    waitForMyTurn = do
+      myTurn <- newEmptyMVar
+      needToWait <-
+        modifyMVar inFlight $ \inFlightMap ->
+          let waitlist = Map.lookup name inFlightMap
+              waitlist' = maybe newQueue (enqueue myTurn) waitlist
+           in pure (Map.insert name waitlist' inFlightMap, isJust waitlist)
+      if needToWait
+        then takeMVar myTurn
+        else pure ()
+    wakeupNextContender :: IO ()
+    wakeupNextContender = do
+      nextContender <-
+        modifyMVar inFlight $ \inFlightMap ->
+          let (next, waitlist') = dequeue (inFlightMap Map.! name)
+           in let inFlightMapEntry =
+                    if isNothing next
+                      then Nothing
+                      else Just waitlist'
+               in pure
+                    (Map.update (const inFlightMapEntry) name inFlightMap, next)
+      maybe (pure ()) (`putMVar` ()) nextContender
+
+onceDisk :: FilePath -> BS.ByteString -> IO () -> IO ()
+onceDisk databaseFile name action =
   withConnection databaseFile checkDone >>= \case
     True -> pure ()
     False -> do
