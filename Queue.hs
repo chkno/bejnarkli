@@ -12,10 +12,10 @@ data Queue a =
 newQueue :: Queue a
 newQueue = Q [] []
 
-enqueue :: Queue a -> a -> Queue a
-enqueue (Q ins outs) x = Q (x : ins) outs
+enqueue :: a -> Queue a -> Queue a
+enqueue x (Q ins outs) = Q (x : ins) outs
 
-dequeue :: Queue a -> (Queue a, Maybe a)
-dequeue q@(Q [] []) = (q, Nothing)
-dequeue (Q ins (out:outs)) = (Q ins outs, Just out)
+dequeue :: Queue a -> (Maybe a, Queue a)
+dequeue q@(Q [] []) = (Nothing, q)
+dequeue (Q ins (out:outs)) = (Just out, Q ins outs)
 dequeue (Q ins []) = dequeue (Q [] (reverse ins))

@@ -17,19 +17,19 @@ prop_Queue allItems (InfiniteList popPattern _) =
   aux newQueue allItems popPattern == allItems
   where
     aux :: Queue Int -> [Int] -> [Bool] -> [Int]
-    aux queue (x:xs) (False:pops) = aux (enqueue queue x) xs pops
+    aux queue (x:xs) (False:pops) = aux (enqueue x queue) xs pops
     aux queue (x:xs) (True:pops) =
-      let (queue', popped) = dequeue queue
+      let (popped, queue') = dequeue queue
        in case popped of
-            Just pop -> pop : aux (enqueue queue' x) xs pops
-            Nothing -> aux (enqueue queue' x) xs pops
+            Just pop -> pop : aux (enqueue x queue') xs pops
+            Nothing -> aux (enqueue x queue') xs pops
     aux queue [] _ = drain queue
     aux _ _ [] = error "Pop schedule was supposed to be infinite"
     drain :: Queue Int -> [Int]
     drain queue =
       case dequeue queue of
-        (queue', Just x) -> x : drain queue'
-        (_, Nothing) -> []
+        (Just x, queue') -> x : drain queue'
+        (Nothing, _) -> []
 
 tests :: IO [Result]
 tests = sequence [quickCheckResult prop_Queue]
