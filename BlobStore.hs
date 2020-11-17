@@ -143,7 +143,7 @@ newBlobDir path = do
   pure $ BlobDir path
 
 instance BlobStore BlobDirStore where
-  sinkBlob bd =
+  sinkBlob bd@(BlobDir d) =
     bracketP
       (openBinaryTempFile (d </> ".incoming") "new")
       (hClose . snd)
@@ -157,8 +157,6 @@ instance BlobStore BlobDirStore where
                    pure (ExtantBlob name)
              , abort = removeFile tmpPath
              })
-    where
-      (BlobDir d) = bd
   listBlobs (BlobDir d) =
     fmap ExtantBlob . mapMaybe unBlobFileName <$> listDirectory d
   getBlob bd (ExtantBlob name) = sourceFile (blobFileName bd name)

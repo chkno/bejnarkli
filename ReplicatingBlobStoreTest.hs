@@ -23,7 +23,7 @@ import ReplicatingBlobStore (ReplicatingBlobStore(ReplicatingBlobStore))
 
 localBejnarkliClient ::
      BlobStore bs => bs -> Password -> (bs, ExtantBlobName) -> IO ()
-localBejnarkliClient remoteBS password (localBS, ename) = do
+localBejnarkliClient remoteBS password (localBS, ename@(ExtantBlob name)) = do
   response <-
     runConduitRes $
     getBlob localBS ename .|
@@ -31,8 +31,6 @@ localBejnarkliClient remoteBS password (localBS, ename) = do
   if response
     then pure ()
     else error "Unexpected transfer failure"
-  where
-    (ExtantBlob name) = ename
 
 prop_Replicates :: Password -> BL.ByteString -> Property
 prop_Replicates password b =

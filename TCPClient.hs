@@ -94,6 +94,5 @@ retryingTCPClient defaultPort hostString = do
   pure $ writeChan chan
   where
     tryOnce :: BlobStore bs => (bs, ExtantBlobName) -> IO Bool
-    tryOnce (bs, ename) =
-      let (ExtantBlob hash) = ename
-       in tCPClient defaultPort hostString hash (getBlob bs ename)
+    tryOnce (bs, ename@(ExtantBlob hash)) =
+      tCPClient defaultPort hostString hash (getBlob bs ename)
