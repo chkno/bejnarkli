@@ -24,7 +24,7 @@ send() {
 }
 
 captured_blob_data() {
-  find "$1" -name incoming -prune -o -type f -exec cat {} +
+  find "$1" -name '.*' -prune -o -type f -exec cat {} +
 }
 
 wait_for_blob() {

@@ -1,4 +1,4 @@
-* Only forward once
+* Attempt re-send after shutdown
 * Send asynchronously
 * Send with specified durability
 * Use TOR

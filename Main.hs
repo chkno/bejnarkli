@@ -67,6 +67,7 @@ main :: IO ()
 main = do
   args <- execParser parserInfo
   localBS <- newBlobDir (blobdir args)
-  peerClients <- mapM (retryingTCPClient (port args)) (peers args)
+  peerClients <-
+    mapM (retryingTCPClient (blobdir args) (port args)) (peers args)
   let replicatingBS = ReplicatingBlobStore peerClients localBS
    in tCPServer (port args) replicatingBS (Pass (fromString (password args)))
