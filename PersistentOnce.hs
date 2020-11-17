@@ -17,6 +17,7 @@ import Control.Concurrent.MVar
   , putMVar
   , takeMVar
   )
+import Control.Exception (finally)
 import qualified Data.ByteString as BS
 import qualified Data.Map.Strict as Map
 import Data.Maybe (isJust, isNothing)
@@ -44,9 +45,7 @@ inFlight = unsafePerformIO $ newMVar Map.empty
 oneAtATime :: BS.ByteString -> IO Bool -> IO Bool
 oneAtATime name action = do
   waitForMyTurn
-  ret <- action
-  wakeupNextContender -- TODO: bracket
-  pure ret
+  finally action wakeupNextContender
   where
     waitForMyTurn :: IO ()
     waitForMyTurn = do

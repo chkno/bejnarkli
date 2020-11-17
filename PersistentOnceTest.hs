@@ -5,6 +5,7 @@ module Main
   ) where
 
 import Control.Concurrent.ParallelIO.Local (parallel_, withPool)
+import Control.Exception (Exception, throwIO, try)
 import Control.Monad (replicateM_)
 import qualified Data.ByteString as BS
 import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
@@ -54,9 +55,40 @@ prop_OnceConcurrently name (NonNegative n) =
       finalCount <- readIORef count
       pure $ correct n finalCount
 
+data SimulatedFailure =
+  SimulatedFailure
+  deriving (Show)
+
+instance Exception SimulatedFailure
+
+prop_OnceConcurrentlyFlakily :: BS.ByteString -> NonNegative Int -> Property
+prop_OnceConcurrentlyFlakily name (NonNegative n) =
+  monadicIO $ run $ withSystemTempDirectory "bej" aux
+  where
+    aux :: FilePath -> IO Bool
+    aux tmpdir = do
+      count <- newIORef 0
+      withPool (n + 1) $ \pool ->
+        parallel_ pool $
+        map
+          (\i ->
+             try (once (tmpdir </> "once-db") name $ flakyInc i count) :: IO (Either SimulatedFailure Bool))
+          [0 .. (n - 1)]
+      finalCount <- readIORef count
+      pure $ correct n finalCount
+    flakyInc :: Int -> IORef Int -> IO Bool
+    flakyInc i count
+      | i `mod` 3 == 0 = inc count >> pure True
+      | i `mod` 3 == 1 = pure False
+      | otherwise = throwIO SimulatedFailure
+
 tests :: IO [Result]
 tests =
-  sequence [quickCheckResult prop_Once, quickCheckResult prop_OnceConcurrently]
+  sequence
+    [ quickCheckResult prop_Once
+    , quickCheckResult prop_OnceConcurrently
+    , quickCheckResult prop_OnceConcurrentlyFlakily
+    ]
 
 main :: IO ()
 main = do
