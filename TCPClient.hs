@@ -71,9 +71,9 @@ tCPClient defaultPort hostString blobHash blobData =
       runConduitRes $
       blobData .|
       bejnarkliClient
-        (appSink appdata >>
-         liftIO (shutdown (fromJust (appRawSocket appdata)) ShutdownSend) >>
-         appSource appdata)
+        (do appSink appdata
+            liftIO (shutdown (fromJust (appRawSocket appdata)) ShutdownSend)
+            appSource appdata)
         blobHash
 
 -- Maybe make these flags?
