@@ -86,23 +86,22 @@ retryMinDelay = 0.1
 retryMaxDelay :: Float
 retryMaxDelay = 600
 
+retrying :: (a -> IO Bool) -> IO (a -> IO ())
+retrying action = do
+  chan <- liftIO newChan
+  _ <-
+    liftIO $
+    mapChanWithBackoff retryIncrement retryMinDelay retryMaxDelay action chan
+  pure $ writeChan chan
+
 retryingTCPClient ::
      BlobStore bs
   => FilePath
   -> Int
   -> String
   -> IO ((bs, ExtantBlobName) -> IO ())
-retryingTCPClient dataDir defaultPort hostString = do
-  chan <- liftIO newChan
-  _ <-
-    liftIO $
-    mapChanWithBackoff
-      retryIncrement
-      retryMinDelay
-      retryMaxDelay
-      (attemptSend dataDir defaultPort hostString)
-      chan
-  pure $ writeChan chan
+retryingTCPClient dataDir defaultPort hostString =
+  retrying $ attemptSend dataDir defaultPort hostString
 
 attemptSend ::
      BlobStore bs
