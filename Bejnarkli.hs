@@ -1,6 +1,7 @@
 module Bejnarkli
   ( bejnarkliServer
   , bejnarkliClient
+  , defaultPort
   , protocolVersion
   , someFunc
   ) where
@@ -25,6 +26,9 @@ import BlobStore (BlobStore, Password, sinkNamePrefixedBlob)
 
 protocolVersion :: Word8
 protocolVersion = fromIntegral $ ord 'B'
+
+defaultPort :: Int
+defaultPort = 8934
 
 bejnarkliServer ::
      (BlobStore blobstore, MonadResource m)

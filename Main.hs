@@ -23,6 +23,7 @@ import Options.Applicative
   )
 import Options.Applicative.Types (ParserInfo)
 
+import Bejnarkli (defaultPort)
 import BlobStore (Password(Pass), newBlobDir)
 import ReplicatingBlobStore (ReplicatingBlobStore(ReplicatingBlobStore))
 import Retransmit (retransmit)
@@ -53,7 +54,7 @@ parser =
   option
     auto
     (long "port" <>
-     value 8934 <>
+     value defaultPort <>
      showDefault <>
      help
        "TCP port.  This is both the port on which this instance will listen and the default port for connecting to peers with unspecified ports.")
