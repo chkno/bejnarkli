@@ -100,15 +100,22 @@ retryingTCPClient dataDir defaultPort hostString = do
       retryIncrement
       retryMinDelay
       retryMaxDelay
-      attemptSend
+      (attemptSend dataDir defaultPort hostString)
       chan
   pure $ writeChan chan
-  where
-    attemptSend :: BlobStore bs => (bs, ExtantBlobName) -> IO Bool
-    attemptSend (bs, ename@(ExtantBlob hash)) =
-      once
-        (dataDir </> ".once")
-        (BS.concat [hash, separator, U8S.fromString hostString]) $
-      tCPClient defaultPort hostString hash (getBlob bs ename)
-    separator :: BS.ByteString
-    separator = U8S.fromString " "
+
+attemptSend ::
+     BlobStore bs
+  => FilePath
+  -> Int
+  -> String
+  -> (bs, ExtantBlobName)
+  -> IO Bool
+attemptSend dataDir defaultPort hostString (bs, ename@(ExtantBlob hash)) =
+  once
+    (dataDir </> ".once")
+    (BS.concat [hash, separator, U8S.fromString hostString]) $
+  tCPClient defaultPort hostString hash (getBlob bs ename)
+
+separator :: BS.ByteString
+separator = U8S.fromString " "
