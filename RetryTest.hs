@@ -16,7 +16,7 @@ import Control.Concurrent.MVar
   , takeMVar
   )
 
-import RetryQueue (RetryParams(RetryParams), retryQueue)
+import Retry (RetryParams(RetryParams), retryQueue)
 
 prop_retryQueueDoesStuff :: Int -> Property
 prop_retryQueueDoesStuff attemptsNeeded =

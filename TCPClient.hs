@@ -35,7 +35,7 @@ import Text.Read (readMaybe)
 import Bejnarkli (bejnarkliClient)
 import BlobStore (BlobStore, ExtantBlobName(ExtantBlob), getBlob)
 import PersistentOnce (once)
-import RetryQueue
+import Retry
   ( RetryParams(RetryParams)
   , increment
   , maxDelay

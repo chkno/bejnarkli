@@ -1,4 +1,4 @@
-module RetryQueue
+module Retry
   ( RetryParams(RetryParams)
   , increment
   , minDelay

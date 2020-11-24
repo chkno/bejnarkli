@@ -59,7 +59,7 @@ library
     PersistentOnce
     Queue
     Retransmit
-    RetryQueue
+    Retry
     TCPClient
 
 executable bejnarkli
@@ -71,7 +71,7 @@ executable bejnarkli
     PersistentOnce,
     Queue,
     Retransmit,
-    RetryQueue,
+    Retry,
     ReplicatingBlobStore,
     TCPClient,
     TCPServer
@@ -85,7 +85,7 @@ test-suite bejnarkli-test
     BlobStore,
     PersistentOnce,
     Queue,
-    RetryQueue,
+    Retry,
     TCPClient
   main-is:             BejnarkliTest.hs
 
@@ -97,7 +97,7 @@ test-suite blobstore-test
     BlobStore
     PersistentOnce
     Queue
-    RetryQueue
+    Retry
     ReplicatingBlobStore
     TCPClient
   main-is:             BlobStoreTest.hs
@@ -117,8 +117,8 @@ test-suite queue-test
 test-suite retry-queue-test
   import: shared-properties
   type:                exitcode-stdio-1.0
-  other-modules:       RetryQueue
-  main-is:             RetryQueueTest.hs
+  other-modules:       Retry
+  main-is:             RetryTest.hs
 
 test-suite replicatedblobstore-test
   import: shared-properties
@@ -128,7 +128,7 @@ test-suite replicatedblobstore-test
     BlobStore
     PersistentOnce
     Queue
-    RetryQueue
+    Retry
     ReplicatingBlobStore
     TCPClient
   main-is:             ReplicatingBlobStoreTest.hs
