@@ -36,7 +36,7 @@ pkgs.haskellPackages.callPackage ({ base64-bytestring, conduit, conduit-extra
     '';
     postInstall = ''
       patchShebangs test.sh
-      ./test.sh $out/bin/bejnarkli
+      ./test.sh $out/bin/bejnarkli $out/bin/bejnarkli-send
     '';
     license = lib.licenses.mit;
   }) { }

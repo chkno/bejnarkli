@@ -1,5 +1,6 @@
 module TCPClient
   ( asyncRetryingTCPClient
+  , retryingTCPClient
   ) where
 
 import Conduit (ConduitT, (.|), liftIO, runConduitRes)
@@ -40,6 +41,7 @@ import Retry
   , maxDelay
   , minDelay
   , retryQueue
+  , retryWithDelay
   )
 
 -- We use parseURI rather than just splitting on : because IPv6 literals
@@ -61,6 +63,7 @@ parsePeerName defaultPort name =
           _ -> (defaultPort, name)
     _ -> (defaultPort, name)
 
+-- |Try to send this blob to this host
 tCPClient ::
      Int
   -> String
@@ -85,6 +88,24 @@ tCPClient defaultPort hostString blobHash blobData =
 retryParams :: RetryParams
 retryParams = RetryParams {increment = 1.5, minDelay = 0.1, maxDelay = 600}
 
+-- |Keep trying to send this blob to this host until successful
+retryingTCPClient ::
+     Int
+  -> String
+  -> BS.ByteString
+  -> ConduitT () BS.ByteString (ResourceT IO) ()
+  -> IO ()
+retryingTCPClient defaultPort hostString blobHash blobData =
+  retryWithDelay retryParams $
+  tCPClient defaultPort hostString blobHash blobData
+
+-- |This produces an 'enqueue' function.  Blobs enqueued are sent one at a time
+-- and share the exponential backoff retry-state.
+--
+-- Failed transfers are retried until they succeed or until the process exits.
+-- Successful transfers are logged in dataDir, and prevent this blob ever
+-- being sent to this host ever again, making it safe to re-enqueue blobs
+-- in separate runs without consuming network resources.
 asyncRetryingTCPClient ::
      BlobStore bs
   => FilePath

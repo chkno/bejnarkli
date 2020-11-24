@@ -3,6 +3,7 @@
 set -euo pipefail
 
 bejnarkli=${1:-$PWD/dist-newstyle/build/*/*/bejnarkli-*/x/bejnarkli/build/bejnarkli/bejnarkli}
+bejnarkli_send=${2:-$PWD/dist-newstyle/build/*/*/bejnarkli-*/x/bejnarkli-send/build/bejnarkli-send/bejnarkli-send}
 
 port1=8934
 port2=8935
@@ -13,16 +14,6 @@ payload="Test content"
 max_attempts=10
 delay_between_attempts=.2
 tcp_timeout=1
-
-message() {
-  echo -n B
-  printf '%s' "$payload" | openssl dgst -sha256 -binary -hmac "$password"
-  printf '%s' "$payload"
-}
-
-send() {
-  socat -t "$tcp_timeout" - "TCP4:localhost:$1"
-}
 
 captured_blob_data() {
   find "$1" -name '.*' -prune -o -type f -exec cat {} +
@@ -39,6 +30,7 @@ wait_for_blob() {
   done
 }
 
+blob=
 tmpdir1=
 tmpdir2=
 tmpdir3=
@@ -53,32 +45,28 @@ cleanup() {
       kill "$pid"
     fi
   done
-  for tmpdir in "$tmpdir1" "$tmpdir2" "$tmpdir3" "$tmpdir4";do
-    if [[ "$tmpdir" && -e "$tmpdir" ]];then
-      rm -rf "$tmpdir"
+  for tmp in "$blob" "$tmpdir1" "$tmpdir2" "$tmpdir3" "$tmpdir4";do
+    if [[ "$tmp" && -e "$tmp" ]];then
+      rm -rf "$tmp"
     fi
   done
 }
 trap cleanup EXIT
 
+blob=$(mktemp)
 tmpdir1=$(mktemp -d)
 tmpdir2=$(mktemp -d)
 tmpdir3=$(mktemp -d)
 tmpdir4=$(mktemp -d)
+
 
 $bejnarkli --blobdir "$tmpdir1" --password "$password" --port "$port1" &
 bejnarkli_pid1=$!
 $bejnarkli --blobdir "$tmpdir2" --password "$password" --port "$port2" --peer "localhost:$port1" --peer "localhost:$port3" &
 bejnarkli_pid2=$!
 
-attempts=1
-until [[ "$(message | send "$port2")" == y ]];do
-  if (( attempts++ >= max_attempts ));then
-    echo "Couldn't send blob" >&2
-    exit 1
-  fi
-  sleep "$delay_between_attempts"
-done
+echo "$payload" > "$blob"
+$bejnarkli_send --password "$password" "$blob" "localhost:$port2"
 
 # Expect blob to be present at the contacted server immediately
 [[ "$(captured_blob_data "$tmpdir2")" == "$payload" ]]

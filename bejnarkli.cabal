@@ -77,6 +77,18 @@ executable bejnarkli
     TCPServer
   build-depends:       optparse-applicative
 
+executable bejnarkli-send
+  import: shared-properties
+  main-is:             MainSend.hs
+  other-modules:
+    Bejnarkli,
+    BlobStore,
+    PersistentOnce,
+    Queue,
+    Retry,
+    TCPClient
+  build-depends:       optparse-applicative
+
 test-suite bejnarkli-test
   import: shared-properties
   type:                exitcode-stdio-1.0
