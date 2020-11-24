@@ -27,7 +27,7 @@ import Bejnarkli (defaultPort)
 import BlobStore (Password(Pass), newBlobDir)
 import ReplicatingBlobStore (ReplicatingBlobStore(ReplicatingBlobStore))
 import Retransmit (retransmit)
-import TCPClient (retryingTCPClient)
+import TCPClient (asyncRetryingTCPClient)
 import TCPServer (tCPServer)
 
 data Args =
@@ -70,7 +70,7 @@ main = do
   args <- execParser parserInfo
   localBS <- newBlobDir (blobdir args)
   peerClients <-
-    mapM (retryingTCPClient (blobdir args) (port args)) (peers args)
+    mapM (asyncRetryingTCPClient (blobdir args) (port args)) (peers args)
   _ <- retransmit localBS peerClients
   let replicatingBS = ReplicatingBlobStore peerClients localBS
    in tCPServer (port args) replicatingBS (Pass (fromString (password args)))

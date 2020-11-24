@@ -1,5 +1,5 @@
 module TCPClient
-  ( retryingTCPClient
+  ( asyncRetryingTCPClient
   ) where
 
 import Conduit (ConduitT, (.|), liftIO, runConduitRes)
@@ -85,13 +85,13 @@ tCPClient defaultPort hostString blobHash blobData =
 retryParams :: RetryParams
 retryParams = RetryParams {increment = 1.5, minDelay = 0.1, maxDelay = 600}
 
-retryingTCPClient ::
+asyncRetryingTCPClient ::
      BlobStore bs
   => FilePath
   -> Int
   -> String
   -> IO ((bs, ExtantBlobName) -> IO ())
-retryingTCPClient dataDir defaultPort hostString =
+asyncRetryingTCPClient dataDir defaultPort hostString =
   retryQueue retryParams $ attemptSend dataDir defaultPort hostString
 
 attemptSend ::
