@@ -3,7 +3,6 @@ module TCPClient
   ) where
 
 import Conduit (ConduitT, (.|), liftIO, runConduitRes)
-import Control.Concurrent.Chan (newChan, writeChan)
 import Control.Monad.Trans.Resource (ResourceT)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.UTF8 as U8S
@@ -86,12 +85,6 @@ tCPClient defaultPort hostString blobHash blobData =
 retryParams :: RetryParams
 retryParams = RetryParams {increment = 1.5, minDelay = 0.1, maxDelay = 600}
 
-retrying :: (a -> IO Bool) -> IO (a -> IO ())
-retrying action = do
-  chan <- liftIO newChan
-  _ <- liftIO $ retryQueue retryParams action chan
-  pure $ writeChan chan
-
 retryingTCPClient ::
      BlobStore bs
   => FilePath
@@ -99,7 +92,7 @@ retryingTCPClient ::
   -> String
   -> IO ((bs, ExtantBlobName) -> IO ())
 retryingTCPClient dataDir defaultPort hostString =
-  retrying $ attemptSend dataDir defaultPort hostString
+  retryQueue retryParams $ attemptSend dataDir defaultPort hostString
 
 attemptSend ::
      BlobStore bs

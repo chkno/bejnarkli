@@ -7,8 +7,8 @@ module Retry
   , retryWithDelay
   ) where
 
-import Control.Concurrent (ThreadId, forkIO, threadDelay)
-import Control.Concurrent.Chan (Chan, readChan, writeChan)
+import Control.Concurrent (forkIO, threadDelay)
+import Control.Concurrent.Chan (newChan, readChan, writeChan)
 import Control.Exception (try)
 import System.Random (getStdRandom, randomR)
 
@@ -41,23 +41,28 @@ retryWithDelay params action = process (minDelay params)
               threadDelay $ round $ 100000 * delay
               process backoff
 
--- |Apply f to items written to the channel.  f returns a bool indicating success.
--- When f is unsuccessful:
---   * The item is re-inserted into the channel to be attempted again later
+-- |Apply f to items passed to the returned enqueue function.
+-- f returns a bool indicating success.  When f is unsuccessful:
+--   * The item is re-enqueued to be attempted again later
 --   * Subsequent calls of f are delayed by exponential back-off with jitter
 --     until successful again.
-retryQueue :: RetryParams -> (a -> IO Bool) -> Chan a -> IO ThreadId
-retryQueue params f chan = forkIO $ process (minDelay params)
-  where
-    process :: Float -> IO ()
-    process prevBackoff = do
-      item <- readChan chan
-      success <- (== Right True) <$> (try $ f item :: IO (Either IOError Bool))
-      let backoff = nextBackoff params success prevBackoff
-       in if success
-            then process (minDelay params)
-            else do
-              delay <- getStdRandom (randomR (0, 2 * backoff))
-              threadDelay $ round $ 100000 * delay
-              writeChan chan item
-              process backoff
+--
+-- Use one retryQueue per failure domain (eg: one per remote network host)
+retryQueue :: RetryParams -> (a -> IO Bool) -> IO (a -> IO ())
+retryQueue params f =
+  newChan >>=
+  (\chan ->
+     let process prevBackoff = do
+           item <- readChan chan
+           success <-
+             (== Right True) <$> (try $ f item :: IO (Either IOError Bool))
+           let backoff = nextBackoff params success prevBackoff
+            in if success
+                 then process (minDelay params) :: IO ()
+                 else do
+                   delay <- getStdRandom (randomR (0, 2 * backoff))
+                   threadDelay $ round $ 100000 * delay
+                   writeChan chan item
+                   process backoff :: IO ()
+      in do _ <- forkIO $ process (minDelay params) -- TODO: Allow thread clean-up
+            pure $ writeChan chan)

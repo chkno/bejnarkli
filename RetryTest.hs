@@ -6,7 +6,6 @@ import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
 import Test.QuickCheck (Property, Result, (==>), isSuccess, quickCheckResult)
 import Test.QuickCheck.Monadic (monadicIO, run)
 
-import Control.Concurrent.Chan (newChan, writeChan)
 import Control.Concurrent.MVar
   ( MVar
   , modifyMVar
@@ -37,10 +36,9 @@ prop_retryWithDelayDoesStuff attemptsNeeded =
 prop_retryQueueDoesStuff :: Int -> Property
 prop_retryQueueDoesStuff attemptsNeeded =
   (0 < attemptsNeeded && attemptsNeeded < 100) ==> monadicIO $ do
-    chan <- run newChan
     counter <- run (newMVar 0 :: IO (MVar Int))
     done <- run newEmptyMVar
-    _ <-
+    queue <-
       run $
       retryQueue
         (RetryParams 0 0 0)
@@ -51,8 +49,7 @@ prop_retryQueueDoesStuff attemptsNeeded =
                putMVar done ()
                pure True
              else pure False)
-        chan
-    run $ writeChan chan ()
+    run $ queue ()
     run $ takeMVar done
 
 tests :: IO [Result]
