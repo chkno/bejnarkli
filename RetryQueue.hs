@@ -1,5 +1,5 @@
 module RetryQueue
-  ( mapChanWithBackoff
+  ( retryQueue
   ) where
 
 import Control.Concurrent (ThreadId, forkIO, threadDelay)
@@ -12,10 +12,8 @@ import System.Random (getStdRandom, randomR)
 --   * The item is re-inserted into the channel to be attempted again later
 --   * Subsequent calls of f are delayed by exponential back-off with jitter
 --     until successful again.
-mapChanWithBackoff ::
-     Float -> Float -> Float -> (a -> IO Bool) -> Chan a -> IO ThreadId
-mapChanWithBackoff increment minDelay maxDelay f chan =
-  forkIO $ process minDelay
+retryQueue :: Float -> Float -> Float -> (a -> IO Bool) -> Chan a -> IO ThreadId
+retryQueue increment minDelay maxDelay f chan = forkIO $ process minDelay
   where
     process :: Float -> IO ()
     process prevBackoff = do

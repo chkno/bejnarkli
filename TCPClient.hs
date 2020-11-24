@@ -35,7 +35,7 @@ import Text.Read (readMaybe)
 import Bejnarkli (bejnarkliClient)
 import BlobStore (BlobStore, ExtantBlobName(ExtantBlob), getBlob)
 import PersistentOnce (once)
-import RetryQueue (mapChanWithBackoff)
+import RetryQueue (retryQueue)
 
 -- We use parseURI rather than just splitting on : because IPv6 literals
 parsePeerName :: Int -> String -> (Int, String)
@@ -90,8 +90,7 @@ retrying :: (a -> IO Bool) -> IO (a -> IO ())
 retrying action = do
   chan <- liftIO newChan
   _ <-
-    liftIO $
-    mapChanWithBackoff retryIncrement retryMinDelay retryMaxDelay action chan
+    liftIO $ retryQueue retryIncrement retryMinDelay retryMaxDelay action chan
   pure $ writeChan chan
 
 retryingTCPClient ::

@@ -16,17 +16,17 @@ import Control.Concurrent.MVar
   , takeMVar
   )
 
-import RetryQueue (mapChanWithBackoff)
+import RetryQueue (retryQueue)
 
-prop_mapChanWithBackoffDoesStuff :: Int -> Property
-prop_mapChanWithBackoffDoesStuff attemptsNeeded =
+prop_retryQueueDoesStuff :: Int -> Property
+prop_retryQueueDoesStuff attemptsNeeded =
   (0 < attemptsNeeded && attemptsNeeded < 100) ==> monadicIO $ do
     chan <- run newChan
     counter <- run (newMVar 0 :: IO (MVar Int))
     done <- run newEmptyMVar
     _ <-
       run $
-      mapChanWithBackoff
+      retryQueue
         0
         0
         0
@@ -42,7 +42,7 @@ prop_mapChanWithBackoffDoesStuff attemptsNeeded =
     run $ takeMVar done
 
 tests :: IO [Result]
-tests = sequence [quickCheckResult prop_mapChanWithBackoffDoesStuff]
+tests = sequence [quickCheckResult prop_retryQueueDoesStuff]
 
 main :: IO ()
 main = do
