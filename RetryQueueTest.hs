@@ -16,7 +16,7 @@ import Control.Concurrent.MVar
   , takeMVar
   )
 
-import RetryQueue (retryQueue)
+import RetryQueue (RetryParams(RetryParams), retryQueue)
 
 prop_retryQueueDoesStuff :: Int -> Property
 prop_retryQueueDoesStuff attemptsNeeded =
@@ -27,9 +27,7 @@ prop_retryQueueDoesStuff attemptsNeeded =
     _ <-
       run $
       retryQueue
-        0
-        0
-        0
+        (RetryParams 0 0 0)
         (\_ -> do
            val <- modifyMVar counter (\v -> pure (v + 1, v))
            if val > attemptsNeeded

@@ -35,7 +35,13 @@ import Text.Read (readMaybe)
 import Bejnarkli (bejnarkliClient)
 import BlobStore (BlobStore, ExtantBlobName(ExtantBlob), getBlob)
 import PersistentOnce (once)
-import RetryQueue (retryQueue)
+import RetryQueue
+  ( RetryParams(RetryParams)
+  , increment
+  , maxDelay
+  , minDelay
+  , retryQueue
+  )
 
 -- We use parseURI rather than just splitting on : because IPv6 literals
 parsePeerName :: Int -> String -> (Int, String)
@@ -77,20 +83,13 @@ tCPClient defaultPort hostString blobHash blobData =
         blobHash
 
 -- Maybe make these flags?
-retryIncrement :: Float
-retryIncrement = 1.5
-
-retryMinDelay :: Float
-retryMinDelay = 0.1
-
-retryMaxDelay :: Float
-retryMaxDelay = 600
+retryParams :: RetryParams
+retryParams = RetryParams {increment = 1.5, minDelay = 0.1, maxDelay = 600}
 
 retrying :: (a -> IO Bool) -> IO (a -> IO ())
 retrying action = do
   chan <- liftIO newChan
-  _ <-
-    liftIO $ retryQueue retryIncrement retryMinDelay retryMaxDelay action chan
+  _ <- liftIO $ retryQueue retryParams action chan
   pure $ writeChan chan
 
 retryingTCPClient ::
