@@ -17,6 +17,7 @@ extra-source-files:  CHANGELOG.md
 
 common shared-properties
   build-depends:
+    async,
     base,
     base64-bytestring,
     bytestring,
@@ -81,6 +82,7 @@ executable bejnarkli-send
   import: shared-properties
   main-is:             MainSend.hs
   other-modules:
+    Async,
     Bejnarkli,
     BlobStore,
     PersistentOnce,
