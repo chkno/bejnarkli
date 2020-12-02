@@ -2,7 +2,7 @@ module Main
   ( main
   ) where
 
-import Data.ByteString.UTF8 (fromString)
+import qualified Data.ByteString as BS
 import Options.Applicative
   ( Parser
   , (<**>)
@@ -33,7 +33,7 @@ import TCPServer (tCPServer)
 data Args =
   Args
     { blobdir :: String
-    , password :: String
+    , passwordFile :: String
     , peers :: [String]
     , port :: Int
     }
@@ -45,7 +45,9 @@ parser =
     (long "blobdir" <>
      short 'd' <>
      value "blobs" <> showDefault <> help "Where to store the blobs") <*>
-  strOption (long "password" <> short 'p' <> help "Transfer password") <*>
+  strOption
+    (long "passwordfile" <>
+     short 'p' <> help "File containing the transfer password") <*>
   many
     (strOption
        (long "peer" <>
@@ -68,9 +70,10 @@ parserInfo =
 main :: IO ()
 main = do
   args <- execParser parserInfo
+  password <- Pass <$> BS.readFile (passwordFile args)
   localBS <- newBlobDir (blobdir args)
   peerClients <-
     mapM (asyncRetryingTCPClient (blobdir args) (port args)) (peers args)
   _ <- retransmit localBS peerClients
   let replicatingBS = ReplicatingBlobStore peerClients localBS
-   in tCPServer (port args) replicatingBS (Pass (fromString (password args)))
+   in tCPServer (port args) replicatingBS password

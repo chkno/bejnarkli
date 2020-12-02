@@ -3,7 +3,7 @@ module Main
   ) where
 
 import Conduit ((.|), runConduitRes, sourceFile)
-import Data.ByteString.UTF8 (fromString)
+import qualified Data.ByteString as BS
 import Data.Maybe (fromMaybe)
 import Options.Applicative
   ( ParseError(ErrorMsg)
@@ -43,7 +43,7 @@ import TCPClient (retryingTCPClient)
 data Args =
   Args
     { durability :: Maybe Int
-    , password :: String
+    , passwordFile :: String
     , file :: FilePath
     , servers :: [String]
     }
@@ -63,7 +63,9 @@ parser =
        validDurability
        (long "durability" <>
         short 'n' <> help "Exit after successfully sending to this many servers")) <*>
-  strOption (long "password" <> short 'p' <> help "Transfer password") <*>
+  strOption
+    (long "passwordfile" <>
+     short 'p' <> help "File containing the transfer password") <*>
   strArgument (metavar "FILE" <> help "File containing the blob to be sent") <*>
   some (strArgument (metavar "SERVERS..." <> help "Server to send the file to"))
 
@@ -95,9 +97,8 @@ parse pinfo =
 main :: IO ()
 main = do
   args <- parse parserInfo
-  hash <-
-    runConduitRes $
-    sourceFile (file args) .| blobName (Pass (fromString (password args)))
+  password <- Pass <$> BS.readFile (passwordFile args)
+  hash <- runConduitRes $ sourceFile (file args) .| blobName password
   atLeast_ (fromMaybe (length (servers args)) (durability args)) $
     map
       (\server ->

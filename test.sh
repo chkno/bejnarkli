@@ -9,7 +9,6 @@ port1=8934
 port2=8935
 port3=8936
 port4=8937
-password=secret
 payload="Test content"
 max_attempts=10
 delay_between_attempts=.2
@@ -30,6 +29,7 @@ wait_for_blob() {
   done
 }
 
+passwordfile=
 blob=
 tmpdir1=
 tmpdir2=
@@ -45,7 +45,7 @@ cleanup() {
       kill "$pid"
     fi
   done
-  for tmp in "$blob" "$tmpdir1" "$tmpdir2" "$tmpdir3" "$tmpdir4";do
+  for tmp in "$passwordfile" "$blob" "$tmpdir1" "$tmpdir2" "$tmpdir3" "$tmpdir4";do
     if [[ "$tmp" && -e "$tmp" ]];then
       rm -rf "$tmp"
     fi
@@ -53,20 +53,23 @@ cleanup() {
 }
 trap cleanup EXIT
 
+passwordfile=$(mktemp)
 blob=$(mktemp)
 tmpdir1=$(mktemp -d)
 tmpdir2=$(mktemp -d)
 tmpdir3=$(mktemp -d)
 tmpdir4=$(mktemp -d)
 
+echo secret > "$passwordfile"
 
-$bejnarkli --blobdir "$tmpdir1" --password "$password" --port "$port1" &
+
+$bejnarkli --blobdir "$tmpdir1" --passwordfile "$passwordfile" --port "$port1" &
 bejnarkli_pid1=$!
-$bejnarkli --blobdir "$tmpdir2" --password "$password" --port "$port2" --peer "localhost:$port1" --peer "localhost:$port3" &
+$bejnarkli --blobdir "$tmpdir2" --passwordfile "$passwordfile" --port "$port2" --peer "localhost:$port1" --peer "localhost:$port3" &
 bejnarkli_pid2=$!
 
 echo "$payload" > "$blob"
-$bejnarkli_send --password "$password" "$blob" "localhost:$port2"
+$bejnarkli_send --passwordfile "$passwordfile" "$blob" "localhost:$port2"
 
 # Expect blob to be present at the contacted server immediately
 [[ "$(captured_blob_data "$tmpdir2")" == "$payload" ]]
@@ -75,16 +78,16 @@ $bejnarkli_send --password "$password" "$blob" "localhost:$port2"
 wait_for_blob "$tmpdir1"
 
 # Expect blob to appear at a peer server started later
-$bejnarkli --blobdir "$tmpdir3" --password "$password" --port "$port3" &
+$bejnarkli --blobdir "$tmpdir3" --passwordfile "$passwordfile" --port "$port3" &
 bejnarkli_pid3=$!
 wait_for_blob "$tmpdir3"
 
 # Restart a server with a new peer & expect the blob to be forwarded
 kill "$bejnarkli_pid3"
 wait "$bejnarkli_pid3" || true
-$bejnarkli --blobdir "$tmpdir3" --password "$password" --port "$port3" --peer "localhost:$port4" &
+$bejnarkli --blobdir "$tmpdir3" --passwordfile "$passwordfile" --port "$port3" --peer "localhost:$port4" &
 bejnarkli_pid3=$!
-$bejnarkli --blobdir "$tmpdir4" --password "$password" --port "$port4" &
+$bejnarkli --blobdir "$tmpdir4" --passwordfile "$passwordfile" --port "$port4" &
 bejnarkli_pid4=$!
 wait_for_blob "$tmpdir4"
 
