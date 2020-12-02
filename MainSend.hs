@@ -6,7 +6,11 @@ import Conduit ((.|), runConduitRes, sourceFile)
 import Data.ByteString.UTF8 (fromString)
 import Data.Maybe (fromMaybe)
 import Options.Applicative
-  ( Parser
+  ( ParseError(ErrorMsg)
+  , Parser
+  , ParserInfo
+  , ParserPrefs
+  , ParserResult(Failure, Success)
   , ReadM
   , (<**>)
   , auto
@@ -22,13 +26,13 @@ import Options.Applicative
   , metavar
   , option
   , optional
+  , parserFailure
   , readerError
   , short
   , some
   , strArgument
   , strOption
   )
-import Options.Applicative.Types (ParserInfo)
 import System.Environment (getArgs)
 
 import Async (atLeast_)
@@ -69,9 +73,24 @@ parserInfo =
     (parser <**> helper)
     (fullDesc <> header "bejnarkli-send - Send a blob to bejnarkli servers")
 
-parse :: ParserInfo a -> IO a
+validateArgs ::
+     ParserPrefs -> ParserInfo a -> ParserResult Args -> ParserResult Args
+validateArgs prefs pinfo (Success Args {durability = Just d, servers = s})
+  | d > length s =
+    Failure $
+    parserFailure
+      prefs
+      pinfo
+      (ErrorMsg
+         "Not enough servers specified to acheive the requested durability")
+      []
+validateArgs _ _ result = result
+
+parse :: ParserInfo Args -> IO Args
 parse pinfo =
-  execParserPure defaultPrefs pinfo <$> getArgs >>= handleParseResult
+  validateArgs defaultPrefs pinfo . execParserPure defaultPrefs pinfo <$>
+  getArgs >>=
+  handleParseResult
 
 main :: IO ()
 main = do
