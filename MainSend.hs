@@ -10,8 +10,10 @@ import Options.Applicative
   , ReadM
   , (<**>)
   , auto
-  , execParser
+  , defaultPrefs
+  , execParserPure
   , fullDesc
+  , handleParseResult
   , header
   , help
   , helper
@@ -27,6 +29,7 @@ import Options.Applicative
   , strOption
   )
 import Options.Applicative.Types (ParserInfo)
+import System.Environment (getArgs)
 
 import Async (atLeast_)
 import Bejnarkli (defaultPort)
@@ -66,9 +69,13 @@ parserInfo =
     (parser <**> helper)
     (fullDesc <> header "bejnarkli-send - Send a blob to bejnarkli servers")
 
+parse :: ParserInfo a -> IO a
+parse pinfo =
+  execParserPure defaultPrefs pinfo <$> getArgs >>= handleParseResult
+
 main :: IO ()
 main = do
-  args <- execParser parserInfo
+  args <- parse parserInfo
   hash <-
     runConduitRes $
     sourceFile (file args) .| blobName (Pass (fromString (password args)))
