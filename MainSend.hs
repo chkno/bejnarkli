@@ -16,6 +16,7 @@ import Options.Applicative
   , long
   , metavar
   , short
+  , some
   , strArgument
   , strOption
   )
@@ -29,20 +30,20 @@ data Args =
   Args
     { password :: String
     , file :: FilePath
-    , server :: String
+    , servers :: [String]
     }
 
 parser :: Parser Args
 parser =
   Args <$> strOption (long "password" <> short 'p' <> help "Transfer password") <*>
   strArgument (metavar "FILE" <> help "File containing the blob to be sent") <*>
-  strArgument (metavar "SERVER" <> help "Server to send the file to")
+  some (strArgument (metavar "SERVERS..." <> help "Server to send the file to"))
 
 parserInfo :: ParserInfo Args
 parserInfo =
   info
     (parser <**> helper)
-    (fullDesc <> header "bejnarkli-send - Send a blob to a bejnarkli server")
+    (fullDesc <> header "bejnarkli-send - Send a blob to bejnarkli servers")
 
 main :: IO ()
 main = do
@@ -50,4 +51,7 @@ main = do
   hash <-
     runConduitRes $
     sourceFile (file args) .| blobName (Pass (fromString (password args)))
-  retryingTCPClient defaultPort (server args) hash (sourceFile (file args))
+  mapM_
+    (\server ->
+       retryingTCPClient defaultPort server hash (sourceFile (file args)))
+    (servers args)
