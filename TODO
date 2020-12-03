@@ -1,3 +1,4 @@
 * Move *.hs to src subdirectory
 * Fix cabal spec to build each module only once
+* Emit logs
 * Use TOR
