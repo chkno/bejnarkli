@@ -14,5 +14,6 @@
     in {
       defaultPackage = genAttrs supported-systems bejnarkli;
       packages = genAttrs supported-systems packages;
+      nixosModules = { bejnarkli = import ./nixos-module.nix; };
     };
 }
