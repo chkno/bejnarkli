@@ -1,4 +1,5 @@
-import (<nixpkgs/nixos/tests/make-test-python.nix>) ({ pkgs, lib, ... }:
+args@{ nixpkgs ? <nixpkgs>, ... }:
+import (nixpkgs + "/nixos/tests/make-test-python.nix") ({ pkgs, lib, ... }:
   let
     passwordFile = pkgs.writeText "bejnarkli-test-secret" "secret";
     testBlob = pkgs.writeText "bejnarkli-test-blob" "contents";
@@ -34,4 +35,4 @@ import (<nixpkgs/nixos/tests/make-test-python.nix>) ({ pkgs, lib, ... }:
       for b in [b1, b2, b3]:
           b.wait_until_succeeds('[[ "$(cat /var/lib/bejnarkli/*)" == contents ]]')
     '';
-  })
+  }) args
