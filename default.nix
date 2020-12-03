@@ -35,7 +35,9 @@ pkgs.haskellPackages.callPackage ({ base64-bytestring, conduit, conduit-extra
           -Wcompat\
           -Werror\
           -Weverything\
+          -Wno-all-missed-specialisations\
           -Wno-implicit-prelude\
+          -Wno-missed-specialisations\
           -Wno-safe\
           -Wno-unsafe' */bejnarkli.cabal
     '';
