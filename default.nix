@@ -29,6 +29,16 @@ pkgs.haskellPackages.callPackage ({ base64-bytestring, conduit, conduit-extra
     ];
     testHaskellDepends = [ openssl QuickCheck quickcheck-instances socat ]
       ++ lib.optionals lint [ hindent hlint nixfmt ];
+    postUnpack = lib.optionalString lint ''
+      sed -i '/default-language:/a \
+        ghc-options:\
+          -Wcompat\
+          -Werror\
+          -Weverything\
+          -Wno-implicit-prelude\
+          -Wno-safe\
+          -Wno-unsafe' */bejnarkli.cabal
+    '';
     postCheck = lib.optionalString lint ''
       hlint *.hs
       hindent --validate *.hs
