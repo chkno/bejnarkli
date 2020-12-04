@@ -1,16 +1,13 @@
 cabal-version:       2.2
 
 name:                bejnarkli
-version:             0.1.0.0
--- synopsis:
--- description:
--- bug-reports:
--- license:
+version:             0.1.1.0
+synopsis:            Durable network storage
+description:
+  Accept data over TCP.  Store it.  Forward it to other instances.
+  Authenticate with a shared secret.  Network interface is write-only.
 license-file:        LICENSE
--- author:
--- maintainer:
--- copyright:
--- category:
+maintainer:          Scott Worley <scottworley@scottworley.com>
 build-type:          Simple
 extra-source-files:  CHANGELOG.md
 
