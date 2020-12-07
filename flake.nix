@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "git+https://github.com/NixOS/nixpkgs?branch=nixos-20.03";
+    nixpkgs.url = "git+https://github.com/NixOS/nixpkgs?branch=nixos-20.09";
   };
   outputs = { self, nixpkgs, }:
     let
