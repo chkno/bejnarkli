@@ -33,6 +33,6 @@ import (nixpkgs + "/nixos/tests/make-test-python.nix") ({ pkgs, lib, ... }:
           "bejnarkli-send --durability 1 --passwordfile ${passwordFile} ${testBlob} b1 b2"
       )
       for b in [b1, b2, b3]:
-          b.wait_until_succeeds('[[ "$(cat /var/lib/bejnarkli/*)" == contents ]]')
+          b.wait_until_succeeds('[[ "$(cat /var/lib/bejnarkli/blobs/*)" == contents ]]')
     '';
   }) args

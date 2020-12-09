@@ -12,7 +12,7 @@ in {
     passwordFile = mkOption {
       description = "File containing the transfer password.";
       type = types.path;
-      default = 8934;
+      default = "${stateDirectoryRoot}/${stateDirectoryName}/password";
     };
     peers = mkOption {
       description = "Other bejnarkli servers to forward blobs to";
@@ -37,7 +37,7 @@ in {
         StateDirectory = stateDirectoryName;
         ExecStart = ''
           ${pkgs.bejnarkli}/bin/bejnarkli \
-            --blobdir ${stateDirectoryRoot}/${stateDirectoryName} \
+            --blobdir ${stateDirectoryRoot}/${stateDirectoryName}/blobs \
             --passwordfile ${cfg.passwordFile} \
             --port ${toString cfg.port} \
             ${concatMapStrings (p: "--peer ${p} ") cfg.peers}
