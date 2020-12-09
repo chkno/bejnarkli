@@ -1,6 +1,6 @@
 # Revision history for bejnarkli
 
-## Unreleased
+## 0.2.0.0 -- 2020-12-09
 
 * Change the blob directory configured in the NixOS module
   from /var/lib/bejnarkli/ to /var/lib/bejnarkli/blobs/,

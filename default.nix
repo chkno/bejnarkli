@@ -6,7 +6,7 @@ pkgs.haskellPackages.callPackage ({ base64-bytestring, conduit, conduit-extra
   , sqlite-simple, stdenv, streaming-commons, temporary, utf8-string, }:
   mkDerivation {
     pname = "bejnarkli";
-    version = "0.1.1.1";
+    version = "0.2.0.0";
     src = lib.cleanSource ./.;
     libraryHaskellDepends = [
       base64-bytestring
