@@ -15,6 +15,7 @@ import (nixpkgs + "/nixos/tests/make-test-python.nix") ({ pkgs, lib, ... }:
         peers = [ "b1" "b2" "b3" ];
       };
       networking.firewall.allowedTCPPorts = [ config.services.bejnarkli.port ];
+      users.users.alice.isNormalUser = true;
     };
   in {
     name = "bejnarkli-nixos-module-test";
@@ -33,6 +34,8 @@ import (nixpkgs + "/nixos/tests/make-test-python.nix") ({ pkgs, lib, ... }:
           "bejnarkli-send --durability 1 --passwordfile ${passwordFile} ${testBlob} b1 b2"
       )
       for b in [b1, b2, b3]:
-          b.wait_until_succeeds('[[ "$(cat /var/lib/bejnarkli/blobs/*)" == contents ]]')
+          b.wait_until_succeeds(
+              "[[ \"$(sudo -u alice bash -c 'cat /var/lib/bejnarkli-blobs/*')\" == contents ]]"
+          )
     '';
   }) args

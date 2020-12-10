@@ -44,5 +44,15 @@ in {
         '';
       };
     };
+    systemd.mounts = [{
+      after = [ "bejnarkli.service" ];
+      bindsTo = [ "bejnarkli.service" ];
+      description = "bejnarkli blobs";
+      options = "bind";
+      type = "none";
+      wantedBy = [ "bejnarkli.service" ];
+      what = "${stateDirectoryRoot}/${stateDirectoryName}/blobs";
+      where = "${stateDirectoryRoot}/${stateDirectoryName}-blobs";
+    }];
   };
 }

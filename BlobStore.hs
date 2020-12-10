@@ -49,8 +49,7 @@ import System.Directory
   , renameFile
   )
 import System.FilePath ((</>))
-import System.IO (hClose)
-import System.IO.Temp (openBinaryTempFile)
+import System.IO (hClose, openBinaryTempFileWithDefaultPermissions)
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import Test.QuickCheck.Instances.ByteString ()
 
@@ -145,7 +144,7 @@ newBlobDir path = do
 instance BlobStore BlobDirStore where
   sinkBlob bd@(BlobDir d) =
     bracketP
-      (openBinaryTempFile (d </> ".incoming") "new")
+      (openBinaryTempFileWithDefaultPermissions (d </> ".incoming") "new")
       (hClose . snd)
       (\(tmpPath, tmpHandle) -> do
          sinkHandle tmpHandle

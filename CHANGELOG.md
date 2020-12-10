@@ -3,7 +3,9 @@
 ## Unreleased
 
 * Change the blob directory configured in the NixOS module
-  from /var/lib/bejnarkli/ to /var/lib/bejnarkli/blobs/
+  from /var/lib/bejnarkli/ to /var/lib/bejnarkli/blobs/,
+  and make it available as /var/lib/bejnarkli-blobs/ for
+  unprivileged users.
 
 ## 0.1.1.1 -- 2020-12-07
 
