@@ -31,8 +31,8 @@ in_git_index_in_tmpdir() {
 
 verify() {
   nix-build --no-link --arg lint true
-  nix --experimental-features 'nix-command flakes' flake check
-  nix --experimental-features 'nix-command flakes' build --no-link --arg lint true
+  nix --print-build-logs --experimental-features 'nix-command flakes' flake check
+  nix --print-build-logs --experimental-features 'nix-command flakes' build --no-link --arg lint true
 }
 
 in_git_index_in_tmpdir verify
