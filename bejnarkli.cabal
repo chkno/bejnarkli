@@ -11,128 +11,112 @@ maintainer:          Scott Worley <scottworley@scottworley.com>
 build-type:          Simple
 extra-source-files:  CHANGELOG.md
 
+source-repository head
+  type: git
+  location: git@github.com:chkno/bejnarkli.git
 
 common shared-properties
   build-depends:
-    async,
-    base,
-    base64-bytestring,
-    bytestring,
-    conduit,
-    conduit-extra,
-    containers,
-    cryptonite,
-    cryptonite-conduit,
-    directory,
-    filepath,
-    memory,
-    network,
-    network-simple,
-    network-uri,
-    parallel-io,
-    QuickCheck,
-    quickcheck-instances,
-    random,
-    resourcet,
-    sqlite-simple,
-    streaming-commons,
-    temporary,
-    utf8-string
+      base
+    , QuickCheck
+    , bytestring
+    , conduit
+    , filepath
+    , parallel-io
+    , quickcheck-instances
+    , temporary
+    , utf8-string
   default-language:    Haskell2010
   if impl(ghc >= 8.8)
-    ghc-options: -Wno-missing-deriving-strategies
+    ghc-options: -Wall -Wno-missing-deriving-strategies
 
 library
   import: shared-properties
-  exposed-modules:     Bejnarkli
-  other-modules:
+  hs-source-dirs: src
+  exposed-modules:
+    Async
+    Bejnarkli
     BlobStore
     PersistentOnce
     Queue
+    ReplicatingBlobStore
     Retransmit
     Retry
     TCPClient
+    TCPServer
+  build-depends:
+      async
+    , base
+    , base64-bytestring
+    , bytestring
+    , conduit-extra
+    , containers
+    , cryptonite
+    , cryptonite-conduit
+    , directory
+    , memory
+    , network
+    , network-simple
+    , network-uri
+    , random
+    , resourcet
+    , sqlite-simple
+    , streaming-commons
 
 executable bejnarkli
   import: shared-properties
-  main-is:             Main.hs
-  other-modules:
-    Bejnarkli,
-    BlobStore,
-    PersistentOnce,
-    Queue,
-    Retransmit,
-    Retry,
-    ReplicatingBlobStore,
-    TCPClient,
-    TCPServer
-  build-depends:       optparse-applicative
+  hs-source-dirs: app
+  main-is: Main.hs
+  build-depends:
+      bejnarkli
+    , optparse-applicative
 
 executable bejnarkli-send
   import: shared-properties
-  main-is:             MainSend.hs
-  other-modules:
-    Async,
-    Bejnarkli,
-    BlobStore,
-    PersistentOnce,
-    Queue,
-    Retry,
-    TCPClient
-  build-depends:       optparse-applicative
+  hs-source-dirs: app
+  main-is: MainSend.hs
+  build-depends:
+      bejnarkli
+    , optparse-applicative
 
 test-suite bejnarkli-test
   import: shared-properties
-  type:                exitcode-stdio-1.0
-  other-modules:
-    Bejnarkli,
-    BlobStore,
-    PersistentOnce,
-    Queue,
-    Retry,
-    TCPClient
-  main-is:             BejnarkliTest.hs
+  hs-source-dirs: test
+  type: exitcode-stdio-1.0
+  main-is: BejnarkliTest.hs
+  build-depends: bejnarkli
 
 test-suite blobstore-test
   import: shared-properties
-  type:                exitcode-stdio-1.0
-  other-modules:
-    Bejnarkli
-    BlobStore
-    PersistentOnce
-    Queue
-    Retry
-    ReplicatingBlobStore
-    TCPClient
-  main-is:             BlobStoreTest.hs
+  hs-source-dirs: test
+  type: exitcode-stdio-1.0
+  main-is: BlobStoreTest.hs
+  build-depends: bejnarkli
 
 test-suite persistent-once-test
   import: shared-properties
-  type:                exitcode-stdio-1.0
-  other-modules:       PersistentOnce Queue
-  main-is:             PersistentOnceTest.hs
+  hs-source-dirs: test
+  type: exitcode-stdio-1.0
+  main-is: PersistentOnceTest.hs
+  build-depends: bejnarkli
 
 test-suite queue-test
   import: shared-properties
-  type:                exitcode-stdio-1.0
-  other-modules:       Queue
-  main-is:             QueueTest.hs
+  hs-source-dirs: test
+  type: exitcode-stdio-1.0
+  main-is: QueueTest.hs
+  build-depends: bejnarkli
 
 test-suite retry-queue-test
   import: shared-properties
-  type:                exitcode-stdio-1.0
-  other-modules:       Retry
-  main-is:             RetryTest.hs
+  hs-source-dirs: test
+  type: exitcode-stdio-1.0
+  main-is: RetryTest.hs
+  build-depends: bejnarkli
 
 test-suite replicatedblobstore-test
   import: shared-properties
-  type:                exitcode-stdio-1.0
-  other-modules:
-    Bejnarkli
-    BlobStore
-    PersistentOnce
-    Queue
-    Retry
-    ReplicatingBlobStore
-    TCPClient
-  main-is:             ReplicatingBlobStoreTest.hs
+  hs-source-dirs: test
+  type: exitcode-stdio-1.0
+  main-is: ReplicatingBlobStoreTest.hs
+  build-depends: bejnarkli
