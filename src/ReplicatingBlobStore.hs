@@ -2,6 +2,8 @@ module ReplicatingBlobStore
   ( ReplicatingBlobStore(..)
   ) where
 
+import Data.Foldable (traverse_)
+
 import BlobStore
   ( BlobStore
   , ExtantBlobName
@@ -25,6 +27,6 @@ instance BlobStore bs => BlobStore (ReplicatingBlobStore bs) where
         , commit =
             \name -> do
               ename <- commit handle name
-              mapM_ (\r -> r (bs, ename)) remotes
+              traverse_ (\r -> r (bs, ename)) remotes
               pure ename
         }

@@ -45,7 +45,7 @@ bejnarkliServer bs password = do
     else yield $ U8S.fromString "n"
 
 idC :: Monad m => ConduitT i i m ()
-idC = await >>= maybe (return ()) (\a -> yield a >> idC)
+idC = await >>= maybe (pure ()) (\a -> yield a *> idC)
 
 prependSource :: Monad m => i -> ConduitT i i m ()
 prependSource prefix =

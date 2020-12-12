@@ -5,10 +5,11 @@ module Retransmit
   ) where
 
 import Control.Concurrent (ThreadId, forkIO)
+import Data.Foldable (traverse_)
 
 import BlobStore (BlobStore, ExtantBlobName, listBlobs)
 
 retransmit
   :: BlobStore bs
   => bs -> [(bs, ExtantBlobName) -> IO ()] -> IO [ThreadId]
-retransmit bs = mapM (\peer -> forkIO $ listBlobs bs >>= mapM_ (peer . (bs, )))
+retransmit bs = traverse (\peer -> forkIO $ listBlobs bs >>= traverse_ (peer . (bs, )))

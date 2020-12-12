@@ -8,6 +8,7 @@ import Control.Concurrent.ParallelIO.Local (parallel_, withPool)
 import Control.Exception (Exception, throwIO, try)
 import Control.Monad (replicateM_)
 import qualified Data.ByteString as BS
+import Data.Functor (($>))
 import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
 import System.FilePath ((</>))
@@ -38,7 +39,7 @@ prop_Once name (NonNegative n) =
     aux :: FilePath -> IO Bool
     aux tmpdir = do
       count <- newIORef 0
-      replicateM_ n (once (tmpdir </> "once-db") name $ inc count >> pure True)
+      replicateM_ n (once (tmpdir </> "once-db") name $ inc count $> True)
       finalCount <- readIORef count
       pure $ correct n finalCount
 
@@ -51,7 +52,7 @@ prop_OnceConcurrently name (NonNegative n) =
       count <- newIORef 0
       withPool (n + 1) $ \pool ->
         parallel_ pool $
-        replicate n (once (tmpdir </> "once-db") name $ inc count >> pure True)
+        replicate n (once (tmpdir </> "once-db") name $ inc count $> True)
       finalCount <- readIORef count
       pure $ correct n finalCount
 
@@ -70,7 +71,7 @@ prop_OnceConcurrentlyFlakily name (NonNegative n) =
       count <- newIORef 0
       withPool (n + 1) $ \pool ->
         parallel_ pool $
-        map
+        fmap
           (\i ->
              try (once (tmpdir </> "once-db") name $ flakyInc i count) :: IO (Either SimulatedFailure Bool))
           [0 .. (n - 1)]
@@ -78,7 +79,7 @@ prop_OnceConcurrentlyFlakily name (NonNegative n) =
       pure $ correct n finalCount
     flakyInc :: Int -> IORef Int -> IO Bool
     flakyInc i count
-      | i `mod` 3 == 0 = inc count >> pure True
+      | i `mod` 3 == 0 = inc count $> True
       | i `mod` 3 == 1 = pure False
       | otherwise = throwIO SimulatedFailure
 

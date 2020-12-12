@@ -77,7 +77,7 @@ prop_BlobStoreWritePrefixedRead bs password b =
     ename <-
       run $
       runConduitRes $
-      (yield name >> sourceLazy b) .| sinkNamePrefixedBlob bs password
+      (yield name *> sourceLazy b) .| sinkNamePrefixedBlob bs password
     ret <- run $ runConduitRes $ getBlob bs (fromJust ename) .| sinkLazy
     assert $ ret == b
 
@@ -94,7 +94,7 @@ prop_BlobStoreWritePrefixedWrongHash bs password blob1 blob2 =
     ename <-
       run $
       runConduitRes $
-      (yield wrongHash >> sourceLazy blob2) .| sinkNamePrefixedBlob bs password
+      (yield wrongHash *> sourceLazy blob2) .| sinkNamePrefixedBlob bs password
     assert $ isNothing ename
 
 prop_BlobStoreWritePrefixedWrongPassword ::
@@ -105,7 +105,7 @@ prop_BlobStoreWritePrefixedWrongPassword bs pass1 pass2 b =
     ename <-
       run $
       runConduitRes $
-      (yield wrongHash >> sourceLazy b) .| sinkNamePrefixedBlob bs pass2
+      (yield wrongHash *> sourceLazy b) .| sinkNamePrefixedBlob bs pass2
     assert $ isNothing ename
 
 class BlobStore bs =>

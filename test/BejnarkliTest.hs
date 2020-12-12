@@ -23,7 +23,7 @@ prop_ServerWritesBlob password b =
     result <-
       run $
       runConduitRes $
-      (yield (BS.pack [66]) >> yield name >> sourceLazy b) .|
+      (yield (BS.pack [66]) *> yield name *> sourceLazy b) .|
       bejnarkliServer bs password .|
       await
     assert $ result == Just (U8S.fromString "y")
@@ -41,7 +41,7 @@ prop_ServerRejectsBadPassword pass1 pass2 b =
     result <-
       run $
       runConduitRes $
-      (yield (BS.pack [66]) >> yield name >> sourceLazy b) .|
+      (yield (BS.pack [66]) *> yield name *> sourceLazy b) .|
       bejnarkliServer bs pass2 .|
       await
     assert $ result == Just (U8S.fromString "n")

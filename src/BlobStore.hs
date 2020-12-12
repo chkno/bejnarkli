@@ -186,4 +186,4 @@ sinkUntrustedBlob bs password expectedHash = do
   liftIO $
     if expectedHash == name
       then Just <$> commit staged expectedHash
-      else abort staged >> pure Nothing
+      else abort staged $> Nothing

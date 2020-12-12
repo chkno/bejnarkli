@@ -80,7 +80,7 @@ main = do
   password <- Pass <$> BS.readFile (passwordFile args)
   localBS <- newBlobDir $ blobdir args
   peerClients <-
-    mapM (asyncRetryingTCPClient (blobdir args) (port args)) (peers args)
+    traverse (asyncRetryingTCPClient (blobdir args) (port args)) (peers args)
   _ <- retransmit localBS peerClients
   let replicatingBS = ReplicatingBlobStore peerClients localBS
    in tCPServer (port args) replicatingBS password
