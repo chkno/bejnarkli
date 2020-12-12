@@ -1,0 +1,28 @@
+cradle:
+  cabal:
+    - path: "src"
+      component: "lib:bejnarkli"
+
+    - path: "app/Main.hs"
+      component: "bejnarkli:exe:bejnarkli"
+
+    - path: "app/MainSend.hs"
+      component: "bejnarkli:exe:bejnarkli-send"
+
+    - path: "test"
+      component: "bejnarkli:test:bejnarkli-test"
+
+    - path: "test"
+      component: "bejnarkli:test:blobstore-test"
+
+    - path: "test"
+      component: "bejnarkli:test:persistent-once-test"
+
+    - path: "test"
+      component: "bejnarkli:test:queue-test"
+
+    - path: "test"
+      component: "bejnarkli:test:retry-queue-test"
+
+    - path: "test"
+      component: "bejnarkli:test:replicatedblobstore-test"
