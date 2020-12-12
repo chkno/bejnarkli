@@ -3,7 +3,6 @@ module Bejnarkli
   , bejnarkliClient
   , defaultPort
   , protocolVersion
-  , someFunc
   ) where
 
 import Conduit
@@ -30,8 +29,8 @@ protocolVersion = fromIntegral $ ord 'B'
 defaultPort :: Int
 defaultPort = 8934
 
-bejnarkliServer ::
-     (BlobStore blobstore, MonadResource m)
+bejnarkliServer
+  :: (BlobStore blobstore, MonadResource m)
   => blobstore
   -> Password
   -> ConduitT BS.ByteString BS.ByteString m ()
@@ -53,18 +52,14 @@ prependSource prefix =
   getZipConduit (ZipConduit (yield prefix) *> ZipConduit idC)
 
 parseResponse :: Monad m => ConduitT BS.ByteString Void m Bool
-parseResponse = do
-  response <- await
-  pure $ response == Just (U8S.fromString "y")
+parseResponse = (== Just (U8S.fromString "y")) <$> await
 
-bejnarkliClient ::
-     Monad m
+bejnarkliClient
+  :: Monad m
   => ConduitT BS.ByteString BS.ByteString m ()
   -> BS.ByteString
   -> ConduitT BS.ByteString Void m Bool
-bejnarkliClient transport blobHash =
-  prependSource (BS.append (BS.pack [protocolVersion]) blobHash) .| transport .|
-  parseResponse
-
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+bejnarkliClient transport blobHash
+  = prependSource (BS.append (BS.pack [protocolVersion]) blobHash)
+ .| transport
+ .| parseResponse
