@@ -1,0 +1,148 @@
+{
+    "extensions": ["BlockArguments", "LambdaCase", "OverloadedStrings", "TupleSections", "TypeApplications"],
+    "fixities": [],
+    "formatting": {
+        "op": {
+            ",": {
+                "force-linebreak": false,
+                "spaces": "after",
+                "linebreaks": "before"
+            },
+            "default": {
+                "force-linebreak": false,
+                "spaces": "both",
+                "linebreaks": "before"
+            },
+            "=": {
+                "force-linebreak": false,
+                "spaces": "both",
+                "linebreaks": "after"
+            },
+            ". in type": {
+                "force-linebreak": false,
+                "spaces": "after",
+                "linebreaks": "after"
+            },
+            ", in other": {
+                "force-linebreak": false,
+                "spaces": "after",
+                "linebreaks": "before"
+            },
+            "record in pattern": {
+                "force-linebreak": false,
+                "spaces": "after",
+                "linebreaks": "after"
+            },
+            "record": {
+                "force-linebreak": true,
+                "spaces": "after",
+                "linebreaks": "after"
+            },
+            ": in pattern": {
+                "force-linebreak": false,
+                "spaces": "none",
+                "linebreaks": "before"
+            },
+            ":: in declaration": {
+                "force-linebreak": false,
+                "spaces": "both",
+                "linebreaks": "before"
+            }
+        },
+        "group": {
+            "{ in pattern": {
+                "force-linebreak": false,
+                "spaces": "none",
+                "linebreaks": "none"
+            },
+            "default": {
+                "force-linebreak": false,
+                "spaces": "none",
+                "linebreaks": "none"
+            },
+            "{": {
+                "force-linebreak": false,
+                "spaces": "both",
+                "linebreaks": "after"
+            },
+            "( in other": {
+                "force-linebreak": false,
+                "spaces": "none",
+                "linebreaks": "after"
+            },
+            "[": {
+                "force-linebreak": false,
+                "spaces": "none",
+                "linebreaks": "after"
+            },
+            "[ in type": {
+                "force-linebreak": false,
+                "spaces": "none",
+                "linebreaks": "after"
+            }
+        },
+        "layout": {
+            "infix-app": "try-oneline",
+            "if": "vertical",
+            "import-spec-list": "try-oneline",
+            "con-decls": "vertical",
+            "declaration": "try-oneline",
+            "app": "try-oneline",
+            "let": "vertical",
+            "record": "vertical",
+            "type": "try-oneline",
+            "export-spec-list": "vertical",
+            "list-comp": "flex"
+        },
+        "penalty": {
+            "overfull": 10,
+            "indent": 1,
+            "overfull-once": 200,
+            "max-line-length": 80,
+            "linebreak": 100
+        },
+        "indent": {
+            "deriving": 4,
+            "if": "indent-by 2",
+            "let-binds": "align",
+            "import-spec-list": "indent-by 2",
+            "onside": 2,
+            "where": 2,
+            "typesig": "align",
+            "do": "indent-by 2",
+            "app": "indent-by 2",
+            "case": "indent-by 2",
+            "let-in": "align",
+            "where-binds": "indent-by 2",
+            "let": "align",
+            "export-spec-list": "indent-by 2",
+            "multi-if": "indent-by 2",
+            "class": "indent-by 2"
+        },
+        "align": {
+            "let-binds": false,
+            "where": false,
+            "matches": false,
+            "limits": [
+                10,
+                25
+            ],
+            "case": false,
+            "import-module": false,
+            "import-spec": false,
+            "class": false,
+            "record-fields": false
+        },
+        "options": {
+            "sort-pragmas": false,
+            "flexible-oneline": true,
+            "decl-no-blank-lines": [],
+            "split-language-pragmas": false,
+            "align-sum-type-decl": true,
+            "sort-import-lists": false,
+            "preserve-vertical-space": false,
+            "sort-imports": false
+        }
+    },
+    "language": "Haskell2010"
+}

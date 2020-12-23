@@ -11,7 +11,6 @@ import Data.Conduit.Network
   , serverSettings
   )
 import Data.String (fromString)
-
 import Bejnarkli (bejnarkliServer)
 import BlobStore (BlobStore, Password)
 
@@ -19,6 +18,5 @@ tCPServer :: BlobStore bs => Int -> bs -> Password -> IO ()
 tCPServer port bs password =
   runTCPServer
     (serverSettings port (fromString "*" :: HostPreference))
-    (\appdata ->
-       runConduitRes $
-       appSource appdata .| bejnarkliServer bs password .| appSink appdata)
+    (\appdata -> runConduitRes
+     $ appSource appdata .| bejnarkliServer bs password .| appSink appdata)

@@ -11,7 +11,6 @@ import System.IO.Temp (withSystemTempDirectory)
 import Test.QuickCheck (Property, Result, (==>), isSuccess, quickCheckResult)
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, run)
-
 import BlobStore
   ( BlobDirStore
   , BlobMapStore
@@ -27,26 +26,24 @@ import BlobStore
   )
 import ReplicatingBlobStore (ReplicatingBlobStore(ReplicatingBlobStore))
 
-prop_BlobStoreWriteReadTrusted ::
-     BlobStore bs => bs -> Password -> BL.ByteString -> Property
-prop_BlobStoreWriteReadTrusted bs password b =
-  monadicIO $ do
-    ename <- run $ runConduitRes $ sourceLazy b .| sinkTrustedBlob bs password
-    ret <- run $ runConduitRes $ getBlob bs ename .| sinkLazy
-    assert $ ret == b
+prop_BlobStoreWriteReadTrusted
+  :: BlobStore bs => bs -> Password -> BL.ByteString -> Property
+prop_BlobStoreWriteReadTrusted bs password b = monadicIO $ do
+  ename <- run $ runConduitRes $ sourceLazy b .| sinkTrustedBlob bs password
+  ret <- run $ runConduitRes $ getBlob bs ename .| sinkLazy
+  assert $ ret == b
 
-prop_BlobStoreWriteReadCorrectHash ::
-     BlobStore bs => bs -> Password -> BL.ByteString -> Property
-prop_BlobStoreWriteReadCorrectHash bs password b =
-  monadicIO $ do
-    name <- run $ runConduitRes $ sourceLazy b .| blobName password
-    ename <-
-      run $ runConduitRes $ sourceLazy b .| sinkUntrustedBlob bs password name
-    ret <- run $ runConduitRes $ getBlob bs (fromJust ename) .| sinkLazy
-    assert $ ret == b
+prop_BlobStoreWriteReadCorrectHash
+  :: BlobStore bs => bs -> Password -> BL.ByteString -> Property
+prop_BlobStoreWriteReadCorrectHash bs password b = monadicIO $ do
+  name <- run $ runConduitRes $ sourceLazy b .| blobName password
+  ename
+    <- run $ runConduitRes $ sourceLazy b .| sinkUntrustedBlob bs password name
+  ret <- run $ runConduitRes $ getBlob bs (fromJust ename) .| sinkLazy
+  assert $ ret == b
 
-prop_BlobStoreWriteWrongHash ::
-     BlobStore bs
+prop_BlobStoreWriteWrongHash
+  :: BlobStore bs
   => bs
   -> Password
   -> BL.ByteString
@@ -55,34 +52,33 @@ prop_BlobStoreWriteWrongHash ::
 prop_BlobStoreWriteWrongHash bs password blob1 blob2 =
   (blob1 /= blob2) ==> monadicIO $ do
     name <- run $ runConduitRes $ sourceLazy blob1 .| blobName password
-    ename <-
-      run $
-      runConduitRes $ sourceLazy blob2 .| sinkUntrustedBlob bs password name
+    ename <- run
+      $ runConduitRes
+      $ sourceLazy blob2 .| sinkUntrustedBlob bs password name
     assert $ isNothing ename
 
-prop_BlobStoreWriteWrongPassword ::
-     BlobStore bs => bs -> Password -> Password -> BL.ByteString -> Property
+prop_BlobStoreWriteWrongPassword
+  :: BlobStore bs => bs -> Password -> Password -> BL.ByteString -> Property
 prop_BlobStoreWriteWrongPassword bs pass1 pass2 b =
   (pass1 /= pass2) ==> monadicIO $ do
     wrongHash <- run $ runConduitRes $ sourceLazy b .| blobName pass1
-    ename <-
-      run $ runConduitRes $ sourceLazy b .| sinkUntrustedBlob bs pass2 wrongHash
+    ename <- run
+      $ runConduitRes
+      $ sourceLazy b .| sinkUntrustedBlob bs pass2 wrongHash
     assert $ isNothing ename
 
-prop_BlobStoreWritePrefixedRead ::
-     BlobStore bs => bs -> Password -> BL.ByteString -> Property
-prop_BlobStoreWritePrefixedRead bs password b =
-  monadicIO $ do
-    name <- run $ runConduitRes $ sourceLazy b .| blobName password
-    ename <-
-      run $
-      runConduitRes $
-      (yield name *> sourceLazy b) .| sinkNamePrefixedBlob bs password
-    ret <- run $ runConduitRes $ getBlob bs (fromJust ename) .| sinkLazy
-    assert $ ret == b
+prop_BlobStoreWritePrefixedRead
+  :: BlobStore bs => bs -> Password -> BL.ByteString -> Property
+prop_BlobStoreWritePrefixedRead bs password b = monadicIO $ do
+  name <- run $ runConduitRes $ sourceLazy b .| blobName password
+  ename <- run
+    $ runConduitRes
+    $ (yield name *> sourceLazy b) .| sinkNamePrefixedBlob bs password
+  ret <- run $ runConduitRes $ getBlob bs (fromJust ename) .| sinkLazy
+  assert $ ret == b
 
-prop_BlobStoreWritePrefixedWrongHash ::
-     BlobStore bs
+prop_BlobStoreWritePrefixedWrongHash
+  :: BlobStore bs
   => bs
   -> Password
   -> BL.ByteString
@@ -91,26 +87,23 @@ prop_BlobStoreWritePrefixedWrongHash ::
 prop_BlobStoreWritePrefixedWrongHash bs password blob1 blob2 =
   (blob1 /= blob2) ==> monadicIO $ do
     wrongHash <- run $ runConduitRes $ sourceLazy blob1 .| blobName password
-    ename <-
-      run $
-      runConduitRes $
-      (yield wrongHash *> sourceLazy blob2) .| sinkNamePrefixedBlob bs password
+    ename <- run
+      $ runConduitRes
+      $ (yield wrongHash *> sourceLazy blob2)
+      .| sinkNamePrefixedBlob bs password
     assert $ isNothing ename
 
-prop_BlobStoreWritePrefixedWrongPassword ::
-     BlobStore bs => bs -> Password -> Password -> BL.ByteString -> Property
+prop_BlobStoreWritePrefixedWrongPassword
+  :: BlobStore bs => bs -> Password -> Password -> BL.ByteString -> Property
 prop_BlobStoreWritePrefixedWrongPassword bs pass1 pass2 b =
   (pass1 /= pass2) ==> monadicIO $ do
     wrongHash <- run $ runConduitRes $ sourceLazy b .| blobName pass1
-    ename <-
-      run $
-      runConduitRes $
-      (yield wrongHash *> sourceLazy b) .| sinkNamePrefixedBlob bs pass2
+    ename <- run
+      $ runConduitRes
+      $ (yield wrongHash *> sourceLazy b) .| sinkNamePrefixedBlob bs pass2
     assert $ isNothing ename
 
-class BlobStore bs =>
-      TestedBlobStore bs
-  where
+class BlobStore bs => TestedBlobStore bs where
   testBlobStore :: bs -> [IO Result]
   testBlobStore bs =
     [ quickCheckResult $ prop_BlobStoreWriteReadTrusted bs

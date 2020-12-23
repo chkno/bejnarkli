@@ -30,7 +30,6 @@ import Database.SQLite.Simple
   , withConnection
   )
 import System.IO.Unsafe (unsafePerformIO)
-
 import Queue (Queue, dequeue, enqueue, newQueue)
 
 -- Perform action only once
@@ -50,25 +49,24 @@ oneAtATime name action = do
     waitForMyTurn :: IO ()
     waitForMyTurn = do
       myTurn <- newEmptyMVar
-      needToWait <-
-        modifyMVar inFlight $ \inFlightMap ->
-          let waitlist = Map.lookup name inFlightMap
-              waitlist' = maybe newQueue (enqueue myTurn) waitlist
+      needToWait <- modifyMVar inFlight $ \inFlightMap
+        -> let waitlist = Map.lookup name inFlightMap
+               waitlist' = maybe newQueue (enqueue myTurn) waitlist
            in pure (Map.insert name waitlist' inFlightMap, isJust waitlist)
       if needToWait
         then takeMVar myTurn
         else pure ()
+
     wakeupNextContender :: IO ()
     wakeupNextContender = do
-      nextContender <-
-        modifyMVar inFlight $ \inFlightMap ->
-          let (next, waitlist') = dequeue (inFlightMap Map.! name)
+      nextContender <- modifyMVar inFlight $ \inFlightMap
+        -> let (next, waitlist') = dequeue (inFlightMap Map.! name)
            in let inFlightMapEntry =
                     if isNothing next
                       then Nothing
                       else Just waitlist'
-               in pure
-                    (Map.update (const inFlightMapEntry) name inFlightMap, next)
+              in pure
+                   (Map.update (const inFlightMapEntry) name inFlightMap, next)
       maybe (pure ()) (`putMVar` ()) nextContender
 
 onceDisk :: FilePath -> BS.ByteString -> IO Bool -> IO Bool
@@ -81,19 +79,21 @@ onceDisk databaseFile name action =
         then withConnection databaseFile markDone
         else pure ()
       pure ret
+  where
     -- SQLite is pretty heavy-weight for this, but it
     --   * is well-supported
     --   * is unlikely to become abandonware
     --   * is well-tested
     --   * uses O(1) memory
     --   * uses O(log n) disk i/o
-  where
     checkDone :: Connection -> IO Bool
     checkDone conn = do
       execute_ conn "CREATE TABLE IF NOT EXISTS once (seen BLOB PRIMARY KEY)"
-      count <-
-        query conn "SELECT COUNT(*) FROM once WHERE seen == (?)" (Only name) :: IO [[Int]]
+      count
+        <- query conn "SELECT COUNT(*) FROM once WHERE seen == (?)" (Only name)
+        :: IO [[Int]]
       pure $ count == [[1]]
+
     markDone :: Connection -> IO ()
     markDone conn =
       execute conn "INSERT INTO once (seen) VALUES (?)" (Only name)

@@ -22,7 +22,6 @@ import Test.QuickCheck
   )
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (monadicIO, run)
-
 import PersistentOnce (once)
 
 correct :: Int -> Int -> Bool
@@ -50,15 +49,13 @@ prop_OnceConcurrently name (NonNegative n) =
     aux :: FilePath -> IO Bool
     aux tmpdir = do
       count <- newIORef 0
-      withPool (n + 1) $ \pool ->
-        parallel_ pool $
-        replicate n (once (tmpdir </> "once-db") name $ inc count $> True)
+      withPool (n + 1) $ \pool -> parallel_ pool
+        $ replicate n (once (tmpdir </> "once-db") name $ inc count $> True)
       finalCount <- readIORef count
       pure $ correct n finalCount
 
-data SimulatedFailure =
-  SimulatedFailure
-  deriving (Show)
+data SimulatedFailure = SimulatedFailure
+    deriving (Show)
 
 instance Exception SimulatedFailure
 
@@ -69,14 +66,12 @@ prop_OnceConcurrentlyFlakily name (NonNegative n) =
     aux :: FilePath -> IO Bool
     aux tmpdir = do
       count <- newIORef 0
-      withPool (n + 1) $ \pool ->
-        parallel_ pool $
-        fmap
-          (\i ->
-             try (once (tmpdir </> "once-db") name $ flakyInc i count) :: IO (Either SimulatedFailure Bool))
-          [0 .. (n - 1)]
+      withPool (n + 1) $ \pool -> parallel_ pool
+        $ fmap (\i -> try (once (tmpdir </> "once-db") name $ flakyInc i count)
+                :: IO (Either SimulatedFailure Bool)) [0 .. (n - 1)]
       finalCount <- readIORef count
       pure $ correct n finalCount
+
     flakyInc :: Int -> IORef Int -> IO Bool
     flakyInc i count
       | i `mod` 3 == 0 = inc count $> True

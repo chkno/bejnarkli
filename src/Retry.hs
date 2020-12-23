@@ -19,21 +19,23 @@ import System.Random (getStdRandom, randomR)
 
 -- This is growing closer to Control.Retry from the "retry" package.
 -- Some of this should probably be replaced with that.
-data RetryParams = RetryParams
-  { increment :: Float, -- Multiplier for how much longer to wait on each consecutive failure.  Eg: 1.5
-    minDelay :: Float,
-    maxDelay :: Float
+data RetryParams =
+  RetryParams
+  { increment :: Float  -- Multiplier for how much longer to wait on each consecutive failure.  Eg: 1.5
+  , minDelay :: Float
+  , maxDelay :: Float
   }
 
 -- How long to wait
 nextBackoff :: RetryParams -> Bool -> Float -> Float
 nextBackoff params True _ = minDelay params
 nextBackoff params False prevBackoff =
-  max (minDelay params) (min (maxDelay params) (prevBackoff * increment params))
+  max
+    (minDelay params)
+    (min (maxDelay params) (prevBackoff * increment params))
 
 retryWithDelay :: RetryParams -> IO Bool -> IO ()
 retryWithDelay params action = process $ minDelay params
-
   where
     process :: Float -> IO ()
     process prevBackoff = (== Right True) <$> try @IOError action >>= \case
@@ -55,7 +57,6 @@ retryQueue :: forall a. RetryParams -> (a -> IO Bool) -> IO (a -> IO ())
 retryQueue params f = do
   chan <- newChan
   forkIO (process (minDelay params) chan) $> writeChan chan -- TODO: Allow thread clean-up
-
   where
     process :: Float -> Chan a -> IO ()
     process prevBackoff chan = do

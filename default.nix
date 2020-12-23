@@ -1,6 +1,6 @@
 { pkgs ? import <nixpkgs> { }, lint ? false, }:
 pkgs.haskellPackages.callPackage ({ base64-bytestring, conduit, conduit-extra
-  , cryptonite, cryptonite-conduit, hindent, hlint, lib, memory, mkDerivation
+  , cryptonite, cryptonite-conduit, floskell, hlint, lib, memory, mkDerivation
   , network, network-simple, network-uri, nixfmt, openssl, optparse-applicative
   , parallel-io, QuickCheck, quickcheck-instances, random, resourcet, socat
   , sqlite-simple, stdenv, streaming-commons, temporary, utf8-string, }:
@@ -28,7 +28,7 @@ pkgs.haskellPackages.callPackage ({ base64-bytestring, conduit, conduit-extra
       utf8-string
     ];
     testHaskellDepends = [ openssl QuickCheck quickcheck-instances socat ]
-      ++ lib.optionals lint [ hindent hlint nixfmt ];
+      ++ lib.optionals lint [ floskell hlint nixfmt ];
     postUnpack = lib.optionalString lint ''
       sed -i '/default-language:/a \
         ghc-options:\
@@ -43,7 +43,15 @@ pkgs.haskellPackages.callPackage ({ base64-bytestring, conduit, conduit-extra
     '';
     postCheck = lib.optionalString lint ''
       hlint *.hs
-      hindent --validate *.hs
+
+      find app src test -name '*.hs' -exec bash -c '
+        status=0
+        for f;do
+          diff -u --label "$f" "$f" --label "$f formatted" <(floskell < "$f")
+          status=$((status || $?))
+        done
+        exit "$status"' - {} +
+
       nixfmt --check *.nix
     '';
     postInstall = ''

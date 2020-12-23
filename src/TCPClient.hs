@@ -34,7 +34,6 @@ import Network.URI
   )
 import System.FilePath ((</>))
 import Text.Read (readMaybe)
-
 import Bejnarkli (bejnarkliClient)
 import BlobStore (BlobStore, ExtantBlobName(ExtantBlob), getBlob)
 import PersistentOnce (once)
@@ -52,51 +51,53 @@ parsePeerName :: Int -> String -> (Int, String)
 parsePeerName defaultPort name = fromMaybe (defaultPort, name) do
   uri <- find validURI (parseURI $ "bejnarkli://" ++ name)
   auth <- find (null . uriUserInfo) $ uriAuthority uri
-  port <- readMaybe =<< stripPrefix ":" ( uriPort auth)
+  port <- readMaybe =<< stripPrefix ":" (uriPort auth)
   pure (port, uriRegName auth)
-
   where
-    validURI uri = uriScheme uri == "bejnarkli:"
+    validURI uri =
+      uriScheme uri == "bejnarkli:"
       && null (uriPath uri)
       && null (uriQuery uri)
       && null (uriFragment uri)
 
 -- |Try to send this blob to this host
-tCPClient
-  :: Int
-  -> String
-  -> BS.ByteString
-  -> ConduitT () BS.ByteString (ResourceT IO) ()
-  -> IO Bool
+tCPClient :: Int
+          -> String
+          -> BS.ByteString
+          -> ConduitT () BS.ByteString (ResourceT IO) ()
+          -> IO Bool
 tCPClient defaultPort hostString blobHash blobData =
   let (port, host) = parsePeerName defaultPort hostString
-   in runTCPClient (clientSettings port (U8S.fromString host)) app
+  in runTCPClient (clientSettings port (U8S.fromString host)) app
   where
     app :: AppData -> IO Bool
-    app appdata
-      = runConduitRes
+    app appdata =
+      runConduitRes
       $ blobData
-     .| bejnarkliClient
-          ( do
-              appSink appdata
-              liftIO (shutdown (fromJust (appRawSocket appdata)) ShutdownSend)
-              appSource appdata
-          )
-          blobHash
+      .| bejnarkliClient
+        (do
+           appSink appdata
+           liftIO (shutdown (fromJust (appRawSocket appdata)) ShutdownSend)
+           appSource appdata)
+        blobHash
 
 -- Maybe make these flags?
 retryParams :: RetryParams
-retryParams = RetryParams {increment = 1.5, minDelay = 0.1, maxDelay = 600}
+retryParams =
+  RetryParams
+  { increment = 1.5
+  , minDelay = 0.1
+  , maxDelay = 600
+  }
 
 -- |Keep trying to send this blob to this host until successful
-retryingTCPClient
-  :: Int
-  -> String
-  -> BS.ByteString
-  -> ConduitT () BS.ByteString (ResourceT IO) ()
-  -> IO ()
-retryingTCPClient defaultPort hostString blobHash blobData
-  = retryWithDelay retryParams
+retryingTCPClient :: Int
+                  -> String
+                  -> BS.ByteString
+                  -> ConduitT () BS.ByteString (ResourceT IO) ()
+                  -> IO ()
+retryingTCPClient defaultPort hostString blobHash blobData =
+  retryWithDelay retryParams
   $ tCPClient defaultPort hostString blobHash blobData
 
 -- |This produces an 'enqueue' function.  Blobs enqueued are sent one at a time
@@ -108,17 +109,23 @@ retryingTCPClient defaultPort hostString blobHash blobData
 -- in separate runs without consuming network resources.
 asyncRetryingTCPClient
   :: BlobStore bs
-  => FilePath -> Int -> String -> IO ((bs, ExtantBlobName) -> IO ())
+  => FilePath
+  -> Int
+  -> String
+  -> IO ((bs, ExtantBlobName) -> IO ())
 asyncRetryingTCPClient dataDir defaultPort hostString =
   retryQueue retryParams $ attemptSend dataDir defaultPort hostString
 
-attemptSend
-  :: BlobStore bs
-  => FilePath -> Int -> String -> (bs, ExtantBlobName) -> IO Bool
-attemptSend dataDir defaultPort hostString (bs, ename@(ExtantBlob hash))
-  = once
-      (dataDir </> ".once")
-      (BS.concat [hash, separator, U8S.fromString hostString])
+attemptSend :: BlobStore bs
+            => FilePath
+            -> Int
+            -> String
+            -> (bs, ExtantBlobName)
+            -> IO Bool
+attemptSend dataDir defaultPort hostString (bs, ename@(ExtantBlob hash)) =
+  once
+    (dataDir </> ".once")
+    (BS.concat [hash, separator, U8S.fromString hostString])
   $ tCPClient defaultPort hostString hash (getBlob bs ename)
 
 separator :: BS.ByteString

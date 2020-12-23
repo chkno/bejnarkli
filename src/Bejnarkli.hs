@@ -20,7 +20,6 @@ import qualified Data.ByteString.UTF8 as U8S
 import Data.Char (ord)
 import Data.Conduit.Combinators (headE)
 import Data.Word (Word8)
-
 import BlobStore (BlobStore, Password, sinkNamePrefixedBlob)
 
 protocolVersion :: Word8
@@ -29,11 +28,10 @@ protocolVersion = fromIntegral $ ord 'B'
 defaultPort :: Int
 defaultPort = 8934
 
-bejnarkliServer
-  :: (BlobStore blobstore, MonadResource m)
-  => blobstore
-  -> Password
-  -> ConduitT BS.ByteString BS.ByteString m ()
+bejnarkliServer :: (BlobStore blobstore, MonadResource m)
+                => blobstore
+                -> Password
+                -> ConduitT BS.ByteString BS.ByteString m ()
 bejnarkliServer bs password = do
   wireVersion <- headE
   if wireVersion == Just protocolVersion
@@ -54,12 +52,11 @@ prependSource prefix =
 parseResponse :: Monad m => ConduitT BS.ByteString Void m Bool
 parseResponse = (== Just (U8S.fromString "y")) <$> await
 
-bejnarkliClient
-  :: Monad m
-  => ConduitT BS.ByteString BS.ByteString m ()
-  -> BS.ByteString
-  -> ConduitT BS.ByteString Void m Bool
-bejnarkliClient transport blobHash
-  = prependSource (BS.append (BS.pack [protocolVersion]) blobHash)
- .| transport
- .| parseResponse
+bejnarkliClient :: Monad m
+                => ConduitT BS.ByteString BS.ByteString m ()
+                -> BS.ByteString
+                -> ConduitT BS.ByteString Void m Bool
+bejnarkliClient transport blobHash =
+  prependSource (BS.append (BS.pack [protocolVersion]) blobHash)
+  .| transport
+  .| parseResponse

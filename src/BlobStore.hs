@@ -39,7 +39,12 @@ import qualified Data.ByteString.Base64.URL as Base64
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 (fromString, toString)
 import Data.Conduit (bracketP)
-import Data.Conduit.Combinators (sinkHandle, sinkLazy, sourceLazy, takeExactlyE)
+import Data.Conduit.Combinators
+  ( sinkHandle
+  , sinkLazy
+  , sourceLazy
+  , takeExactlyE
+  )
 import Data.Foldable (find)
 import Data.Functor (($>))
 import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
@@ -59,7 +64,8 @@ import Test.QuickCheck.Instances.ByteString ()
 blobNameLength :: Int
 blobNameLength = 32
 
-newtype Password = Pass BS.ByteString deriving (Show)
+newtype Password = Pass BS.ByteString
+    deriving (Show)
 
 -- HMAC specifies that keys less than the key length are null-padded up
 -- to the key length (longer keys are hashed).  This means that keys that
@@ -69,7 +75,7 @@ newtype Password = Pass BS.ByteString deriving (Show)
 instance Eq Password where
   Pass a == Pass b
     | BS.length a <= blobNameLength && BS.length b <= blobNameLength =
-        nullPad a == nullPad b
+      nullPad a == nullPad b
     | otherwise = a == b
     where
       nullPad s = BS.append s $ BS.replicate (blobNameLength - BS.length s) 0
@@ -77,33 +83,35 @@ instance Eq Password where
 instance Arbitrary Password where
   arbitrary = Pass <$> arbitrary
 
-newtype ExtantBlobName = ExtantBlob BS.ByteString deriving (Eq, Ord)
+newtype ExtantBlobName = ExtantBlob BS.ByteString
+    deriving (Eq, Ord)
 
 blobName
-  :: MonadResource m
-  => Password -> ConduitT BS.ByteString o m BS.ByteString
+  :: MonadResource m => Password -> ConduitT BS.ByteString o m BS.ByteString
 blobName (Pass password) = BA.convert @(HMAC SHA256) <$> sinkHMAC password
 
-data StagedBlobHandle = StagedBlobHandle
+data StagedBlobHandle =
+  StagedBlobHandle
   { commit :: BS.ByteString -> IO ExtantBlobName
   , abort :: IO ()
   }
 
 class BlobStore a where
   sinkBlob
-    :: MonadResource m
-    => a -> ConduitT BS.ByteString o m StagedBlobHandle
+    :: MonadResource m => a -> ConduitT BS.ByteString o m StagedBlobHandle
   listBlobs :: a -> IO [ExtantBlobName]
   getBlob :: a -> ExtantBlobName -> ConduitT i BS.ByteString (ResourceT IO) ()
 
-sinkNamePrefixedBlob
-  :: (BlobStore bs, MonadResource m)
-  => bs -> Password -> ConduitT BS.ByteString o m (Maybe ExtantBlobName)
+sinkNamePrefixedBlob :: (BlobStore bs, MonadResource m)
+                     => bs
+                     -> Password
+                     -> ConduitT BS.ByteString o m (Maybe ExtantBlobName)
 sinkNamePrefixedBlob bs password = do
   name <- takeExactlyE blobNameLength await
   case name of
-    Just aname | BS.length aname == blobNameLength ->
-      sinkUntrustedBlob bs password aname
+    Just aname
+      | BS.length aname
+        == blobNameLength -> sinkUntrustedBlob bs password aname
     _ -> pure Nothing
 
 newtype BlobMapStore = BlobMap (IORef (Map.Map ExtantBlobName BL.ByteString))
@@ -116,14 +124,16 @@ instance BlobStore BlobMapStore where
     blob <- sinkLazy
     pure
       StagedBlobHandle
-        { commit =
-            \name ->
-              let ename = ExtantBlob name
-               in do atomicModifyIORef' rm ((, ()) . Map.insert ename blob)
-                     pure ename
-        , abort = pure ()
-        }
+      { commit = \name
+          -> let ename = ExtantBlob name
+             in do
+                  atomicModifyIORef' rm ((, ()) . Map.insert ename blob)
+                  pure ename
+      , abort = pure ()
+      }
+
   listBlobs (BlobMap rm) = Map.keys <$> readIORef rm
+
   getBlob (BlobMap rm) name = do
     m <- liftIO $ readIORef rm
     sourceLazy $ m Map.! name
@@ -143,47 +153,45 @@ instance BlobStore BlobDirStore where
          sinkHandle tmpHandle
          pure
            StagedBlobHandle
-             { commit =
-                 \name -> do
-                   renameFile tmpPath (blobFileName bd name)
-                   pure (ExtantBlob name)
-             , abort = removeFile tmpPath
-             })
+           { commit = \name -> do
+               renameFile tmpPath (blobFileName bd name)
+               pure (ExtantBlob name)
+           , abort = removeFile tmpPath
+           })
+
   listBlobs (BlobDir d) =
     fmap ExtantBlob . mapMaybe unBlobFileName <$> listDirectory d
+
   getBlob bd (ExtantBlob name) = sourceFile (blobFileName bd name)
 
 blobFileName :: BlobDirStore -> BS.ByteString -> FilePath
 blobFileName (BlobDir d) = (d </>) . toString . Base64.encode
 
 unBlobFileName :: FilePath -> Maybe BS.ByteString
-unBlobFileName
-  = find ((== blobNameLength) . BS.length)
+unBlobFileName =
+  find ((== blobNameLength) . BS.length)
   . either (const Nothing) Just
   . Base64.decode
   . fromString
 
-sinkTrustedBlob
-  :: (BlobStore bs, MonadResource m)
-  => bs
-  -> Password
-  -> ConduitT BS.ByteString o m ExtantBlobName
+sinkTrustedBlob :: (BlobStore bs, MonadResource m)
+                => bs
+                -> Password
+                -> ConduitT BS.ByteString o m ExtantBlobName
 sinkTrustedBlob bs password =
   getZipConduit
     (ZipConduit ((,) <$> sinkBlob bs) <*> ZipConduit (blobName password))
-    >>= liftIO . uncurry commit
+  >>= liftIO . uncurry commit
 
-sinkUntrustedBlob
-  :: (BlobStore bs, MonadResource m)
-  => bs
-  -> Password
-  -> BS.ByteString
-  -> ConduitT BS.ByteString o m (Maybe ExtantBlobName)
+sinkUntrustedBlob :: (BlobStore bs, MonadResource m)
+                  => bs
+                  -> Password
+                  -> BS.ByteString
+                  -> ConduitT BS.ByteString o m (Maybe ExtantBlobName)
 sinkUntrustedBlob bs password expectedHash = do
-  (staged, name) <-
-    getZipConduit
-      (ZipConduit ((,) <$> sinkBlob bs) <*> ZipConduit (blobName password))
-  liftIO $
-    if expectedHash == name
+  (staged, name) <- getZipConduit
+    (ZipConduit ((,) <$> sinkBlob bs) <*> ZipConduit (blobName password))
+  liftIO
+    $ if expectedHash == name
       then Just <$> commit staged expectedHash
       else abort staged $> Nothing
