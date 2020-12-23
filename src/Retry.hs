@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Retry
@@ -12,7 +13,7 @@ module Retry
 
 import Data.Functor (($>))
 import Control.Concurrent (forkIO, threadDelay)
-import Control.Concurrent.Chan (newChan, readChan, writeChan)
+import Control.Concurrent.Chan (Chan, newChan, readChan, writeChan)
 import Control.Exception (try)
 import System.Random (getStdRandom, randomR)
 
@@ -50,12 +51,13 @@ retryWithDelay params action = process $ minDelay params
 --     until successful again.
 --
 -- Use one retryQueue per failure domain (eg: one per remote network host)
-retryQueue :: RetryParams -> (a -> IO Bool) -> IO (a -> IO ())
+retryQueue :: forall a. RetryParams -> (a -> IO Bool) -> IO (a -> IO ())
 retryQueue params f = do
   chan <- newChan
   forkIO (process (minDelay params) chan) $> writeChan chan -- TODO: Allow thread clean-up
 
   where
+    process :: Float -> Chan a -> IO ()
     process prevBackoff chan = do
       item <- readChan chan
       (== Right True) <$> try @IOError (f item) >>= \case
