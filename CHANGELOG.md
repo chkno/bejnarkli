@@ -1,5 +1,9 @@
 # Revision history for bejnarkli
 
+## Unreleased
+
+* Fix a circular dependency in systemd unit ordering.
+
 ## 0.2.0.0 -- 2020-12-09
 
 * Change the blob directory configured in the NixOS module

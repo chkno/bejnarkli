@@ -50,6 +50,11 @@ in {
       description = "bejnarkli blobs";
       options = "bind";
       type = "none";
+      unitConfig = {
+        Before = "unmount.target";
+        Conflicts = "umount.target";
+        DefaultDependencies = "no";
+      };
       wantedBy = [ "bejnarkli.service" ];
       what = "${stateDirectoryRoot}/${stateDirectoryName}/blobs";
       where = "${stateDirectoryRoot}/${stateDirectoryName}-blobs";
