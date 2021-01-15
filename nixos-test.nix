@@ -1,7 +1,7 @@
 args@{ nixpkgs ? <nixpkgs>, ... }:
 import (nixpkgs + "/nixos/tests/make-test-python.nix") ({ pkgs, lib, ... }:
   let
-    passwordFile = pkgs.writeText "bejnarkli-test-secret" "secret";
+    passwordFile = "${pkgs.writeText "bejnarkli-test-secret" "secret"}";
     testBlob = pkgs.writeText "bejnarkli-test-blob" "contents";
     bejnarkliOverlay = final: prev: {
       bejnarkli = import ./default.nix { inherit pkgs; };
