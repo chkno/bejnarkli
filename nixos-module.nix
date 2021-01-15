@@ -1,8 +1,7 @@
 { config, lib, pkgs, ... }:
 let
-  inherit (lib)
-    concatMap concatMapStrings escapeShellArg mkEnableOption mkIf mkOption
-    types;
+  inherit (lib) mkEnableOption mkIf mkOption types;
+  inherit (lib.cli) toGNUCommandLineShell;
   cfg = config.services.bejnarkli;
   stateDirectoryRoot = "/var/lib";
   stateDirectoryName = "bejnarkli";
@@ -41,12 +40,15 @@ in {
         DynamicUser = "yes";
         StateDirectory = stateDirectoryName;
         ExecStart = ''
-          ${pkgs.bejnarkli}/bin/bejnarkli \
-            --blobdir ${stateDirectoryRoot}/${stateDirectoryName}/blobs \
-            --listenaddress ${escapeShellArg cfg.listenAddress} \
-            --passwordfile ${cfg.passwordFile} \
-            --port ${toString cfg.port} \
-            ${concatMapStrings (p: "--peer ${p} ") cfg.peers}
+          ${pkgs.bejnarkli}/bin/bejnarkli ${
+            toGNUCommandLineShell { } {
+              inherit (cfg) port;
+              blobdir = "${stateDirectoryRoot}/${stateDirectoryName}/blobs";
+              listenaddress = cfg.listenAddress;
+              passwordfile = cfg.passwordFile;
+              peer = cfg.peers;
+            }
+          }
         '';
       };
     };
