@@ -1,6 +1,6 @@
 # Revision history for bejnarkli
 
-## Unreleased
+## 0.2.1.0 -- 2021-01-14
 
 * Add --listenaddress option
 
