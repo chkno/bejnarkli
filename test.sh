@@ -63,7 +63,7 @@ tmpdir4=$(mktemp -d)
 echo secret > "$passwordfile"
 
 
-$bejnarkli --blobdir "$tmpdir1" --passwordfile "$passwordfile" --port "$port1" &
+$bejnarkli --blobdir "$tmpdir1" --passwordfile "$passwordfile" --port "$port1" --listenaddress localhost &
 bejnarkli_pid1=$!
 $bejnarkli --blobdir "$tmpdir2" --passwordfile "$passwordfile" --port "$port2" --peer "localhost:$port1" --peer "localhost:$port3" &
 bejnarkli_pid2=$!

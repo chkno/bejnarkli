@@ -9,6 +9,11 @@ let
 in {
   options.services.bejnarkli = {
     enable = mkEnableOption "Run a bejnarkli blob-store-and-forward server";
+    listenAddress = mkOption {
+      description = "Local address on which to listen";
+      type = types.str;
+      default = "*";
+    };
     passwordFile = mkOption {
       description = "File containing the transfer password.";
       type = types.path;
@@ -38,6 +43,7 @@ in {
         ExecStart = ''
           ${pkgs.bejnarkli}/bin/bejnarkli \
             --blobdir ${stateDirectoryRoot}/${stateDirectoryName}/blobs \
+            --listenaddress ${escapeShellArg cfg.listenAddress} \
             --passwordfile ${cfg.passwordFile} \
             --port ${toString cfg.port} \
             ${concatMapStrings (p: "--peer ${p} ") cfg.peers}

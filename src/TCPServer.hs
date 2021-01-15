@@ -14,9 +14,9 @@ import Data.String (fromString)
 import Bejnarkli (bejnarkliServer)
 import BlobStore (BlobStore, Password)
 
-tCPServer :: BlobStore bs => Int -> bs -> Password -> IO ()
-tCPServer port bs password =
+tCPServer :: BlobStore bs => String -> Int -> bs -> Password -> IO ()
+tCPServer listenAddress port bs password =
   runTCPServer
-    (serverSettings port (fromString "*" :: HostPreference))
+    (serverSettings port (fromString listenAddress :: HostPreference))
     (\appdata -> runConduitRes
      $ appSource appdata .| bejnarkliServer bs password .| appSink appdata)

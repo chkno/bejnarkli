@@ -32,6 +32,7 @@ import TCPServer (tCPServer)
 data Args =
   Args
   { blobdir :: String
+  , listenAddress :: String
   , passwordFile :: String
   , peers :: [String]
   , port :: Int
@@ -46,6 +47,11 @@ parser =
      <> value "blobs"
      <> showDefault
      <> help "Where to store the blobs")
+  <*> strOption
+    (long "listenaddress"
+     <> value "*"
+     <> showDefault
+     <> help "Local address on which to listen")
   <*> strOption
     (long "passwordfile"
      <> short 'p'
@@ -79,4 +85,4 @@ main = do
     (peers args)
   _ <- retransmit localBS peerClients
   let replicatingBS = ReplicatingBlobStore peerClients localBS
-    in tCPServer (port args) replicatingBS password
+    in tCPServer (listenAddress args) (port args) replicatingBS password
