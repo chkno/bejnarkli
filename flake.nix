@@ -6,7 +6,7 @@
     let
       inherit (nixpkgs.lib) genAttrs;
 
-      supported-systems = [ "aarch64-linux" "x86_64-linux" ]; # TODO: Expand
+      supported-systems = [ "aarch64-linux" "i686-linux" "x86_64-linux" ];
       bejnarkli = system:
         import ./. { pkgs = nixpkgs.legacyPackages."${system}"; };
       packages = system: { bejnarkli = bejnarkli system; };
