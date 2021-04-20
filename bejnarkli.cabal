@@ -1,7 +1,7 @@
 cabal-version:       2.2
 
 name:                bejnarkli
-version:             0.2.1.0
+version:             0.2.1.1
 synopsis:            Durable network storage
 description:
   Accept data over TCP.  Store it.  Forward it to other instances.

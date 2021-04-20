@@ -1,6 +1,6 @@
 # Revision history for bejnarkli
 
-## Unreleased
+## 0.2.1.1 -- 2021-04-20
 
 * Offer "overlay" and "overlays" flake outputs
 
