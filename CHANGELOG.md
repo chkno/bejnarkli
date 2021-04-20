@@ -1,5 +1,9 @@
 # Revision history for bejnarkli
 
+## Unreleased
+
+* Offer "overlay" and "overlays" flake outputs
+
 ## 0.2.1.0 -- 2021-01-14
 
 * Add --listenaddress option
